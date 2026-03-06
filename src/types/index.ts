@@ -19,8 +19,6 @@ export interface Shoe {
 }
 
 export interface ActivityShoe {
-  id: number;
-  activity_id: number;
   shoe_id: number;
   distance_km: number;
 }
@@ -31,6 +29,7 @@ export interface Activity {
   date: string;
   total_distance_km: number;
   source: 'manual' | 'strava';
-  strava_activity_id?: number;
+  strava_activity_id?: number | null;
+  created_at?: string;
   shoes?: ActivityShoe[];
 }

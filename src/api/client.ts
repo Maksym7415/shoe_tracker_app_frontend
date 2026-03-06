@@ -33,14 +33,14 @@ const client: AxiosInstance = axios.create({
   },
 });
 
+const AUTH_ENDPOINTS_REQUIRING_TOKEN = ['/api/auth/me', '/api/auth/profile'];
+
 client.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    console.log('config', config);
     const token = await getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else if (config.url?.includes('/api/auth/')) {
-      // Debug: 401 on /api/auth/me often means no token was sent
+    } else if (config.url && AUTH_ENDPOINTS_REQUIRING_TOKEN.some((p) => config.url?.includes(p))) {
       console.warn('[API] No token in storage for auth request:', config.url);
     }
     return config;
@@ -51,7 +51,7 @@ client.interceptors.request.use(
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log('error', error.response);
+    console.log('error', error);
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       console.warn('[API] 401 Unauthorized on', originalRequest.url, '- clearing token');

@@ -38,10 +38,10 @@ export default function ShoeListItem({
       <View style={styles.meta}>
         <Text style={styles.metaText}>{shoe.activity_type}</Text>
         {hasMax && (
-          <Text style={styles.metaText}>Max: {shoe.max_distance_km} km</Text>
+          <Text style={styles.metaText}>Max: {Number(shoe.max_distance_km).toFixed(2)} km</Text>
         )}
         {hasCovered && (
-          <Text style={styles.metaText}>Covered: {shoe.distance_covered_km} km</Text>
+          <Text style={styles.metaText}>Covered: {Number(shoe.distance_covered_km).toFixed(2)} km</Text>
         )}
       </View>
       <View style={styles.actions}>

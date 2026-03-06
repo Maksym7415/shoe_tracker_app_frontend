@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ShoesScreen from '../screens/ShoesScreen';
 import ShoeFormScreen from '../screens/ShoeFormScreen';
 import ActivitiesScreen from '../screens/ActivitiesScreen';
+import AddActivityScreen from '../screens/AddActivityScreen';
+import ActivityEditScreen from '../screens/ActivityEditScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import type { MainStackParamList } from './types';
 
@@ -24,6 +26,8 @@ function ActivitiesStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="Activities" component={ActivitiesScreen} options={{ title: 'Activities' }} />
+      <Stack.Screen name="Activities/Add" component={AddActivityScreen} options={{ title: 'Add Activity' }} />
+      <Stack.Screen name="Activities/Edit" component={ActivityEditScreen} options={{ title: 'Edit Activity' }} />
     </Stack.Navigator>
   );
 }

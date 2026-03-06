@@ -65,9 +65,9 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           setModel(s.model);
           setActivityType(s.activity_type || 'running');
           setNick(s.nick ?? '');
-          setMaxDistanceKm(s.max_distance_km != null ? String(s.max_distance_km) : '');
+          setMaxDistanceKm(s.max_distance_km != null ? Number(s.max_distance_km).toFixed(2) : '');
           setDistanceCoveredKm(
-            s.distance_covered_km != null ? String(s.distance_covered_km) : ''
+            s.distance_covered_km != null ? Number(s.distance_covered_km).toFixed(2) : ''
           );
         })
         .catch((err: unknown) => {

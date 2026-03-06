@@ -13,7 +13,7 @@ export interface RegisterResponse {
 
 export const authApi = {
   login: async (email: string, password: string) => {
-console.log('login', email, password);
+
     const res = await client.post<LoginResponse>('/api/auth/login', { email, password })
     console.log('res', res);
     return res;
