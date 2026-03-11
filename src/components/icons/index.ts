@@ -1,0 +1,11 @@
+export { default as GearIcon } from './GearIcon';
+export { default as StarIcon } from './StarIcon';
+export { default as PlusIcon } from './PlusIcon';
+export { default as ActivitiesIcon } from './ActivitiesIcon';
+export { default as ProfileIcon } from './ProfileIcon';
+export { default as StravaIcon } from './StravaIcon';
+export { default as ConnectIcon } from './ConnectIcon';
+export { default as ShoesActivityIcon } from './ShoesActivityIcon';
+export { default as ChevronDownIcon } from './ChevronDownIcon';
+export { default as CalendarIcon } from './CalendarIcon';
+export { default as TrashIcon } from './TrashIcon';

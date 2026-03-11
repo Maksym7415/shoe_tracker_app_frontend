@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,13 +17,17 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
-import type { Shoe } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
+import { ChevronDownIcon, CalendarIcon, TrashIcon } from '../components/icons';
+import type { Gear } from '../types';
 import { activitiesApi } from '../api/activities';
-import { shoesApi } from '../api/shoes';
+import { gearApi } from '../api/gear';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Activities/Edit'>;
 
-type ShoeRow = { shoeId: number | null; distanceKm: string };
+type GearRow = { gearId: number | null; distanceKm: string };
+
+const INPUT_HEIGHT = 40;
 
 function parseDateISO(dateStr: string): Date {
   const [y, m, d] = dateStr.split(/[-T]/).map(Number);
@@ -38,13 +42,21 @@ function formatDateISO(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function shoeLabel(shoe: Shoe): string {
-  const nick = shoe.nick?.trim();
-  if (nick) return `${shoe.brand} ${shoe.model} (${nick})`;
-  return `${shoe.brand} ${shoe.model}`;
+function formatDateDisplay(date: Date): string {
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}.${m}.${y}`;
+}
+
+function gearLabel(gear: Gear): string {
+  const nick = gear.nick?.trim();
+  if (nick) return nick;
+  return `${gear.brand} ${gear.model}`;
 }
 
 export default function ActivityEditScreen({ route, navigation }: Props) {
+  const { tokens } = useTheme();
   const activityId = route.params.id;
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date());
@@ -53,11 +65,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shoes, setShoes] = useState<Shoe[]>([]);
-  const [shoeRows, setShoeRows] = useState<ShoeRow[]>([]);
-  const [shoePickerRowIndex, setShoePickerRowIndex] = useState<number | null>(
-    null
-  );
+  const [gearList, setGearList] = useState<Gear[]>([]);
+  const [gearRows, setGearRows] = useState<GearRow[]>([]);
+  const [gearPickerRowIndex, setGearPickerRowIndex] = useState<number | null>(null);
 
   const parseNum = (s: string): number => {
     const t = s.trim();
@@ -73,26 +83,27 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
       let cancelled = false;
       setLoading(true);
       setError(null);
-      Promise.all([activitiesApi.get(activityId), shoesApi.list()])
-        .then(([activityRes, shoesRes]) => {
+      Promise.all([activitiesApi.get(activityId), gearApi.list({ gear_type: 'shoe' })])
+        .then(([activityRes, gearRes]) => {
           if (cancelled) return;
           const a = activityRes.activity;
           setName(a.name);
           setDate(parseDateISO(a.date));
           setTotalDistanceKm(Number(a.total_distance_km).toFixed(2));
-          setShoes(shoesRes.shoes ?? []);
-          const rows: ShoeRow[] = (a.shoes ?? []).map((s) => ({
-            shoeId: s.shoe_id,
-            distanceKm: Number(s.distance_km).toFixed(2),
-          }));
-          setShoeRows(rows);
+          setGearList(gearRes.gear ?? []);
+          const gearItems = a.gear ?? a.shoes ?? [];
+          const rows: GearRow[] = gearItems.map((g) => {
+            const id = 'gear_id' in g ? g.gear_id : (g as { shoe_id: number }).shoe_id;
+            const val = 'value' in g ? g.value : (g as { distance_km: number }).distance_km;
+            return { gearId: id, distanceKm: Number(val).toFixed(2) };
+          });
+          setGearRows(rows);
         })
         .catch((err: unknown) => {
           if (cancelled) return;
           const msg =
             err && typeof err === 'object' && 'response' in err
-              ? (err as { response?: { data?: { error?: string } } }).response
-                  ?.data?.error
+              ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
               : null;
           setError(msg ?? 'Failed to load activity');
         })
@@ -110,75 +121,76 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
     if (selectedDate) setDate(selectedDate);
   }, []);
 
-  const addShoeRow = useCallback(() => {
-    setShoeRows((prev) => {
-      const next = [...prev, { shoeId: null, distanceKm: '' }];
-      if (prev.length === 1 && prev[0].shoeId != null) {
+  const addGearRow = useCallback(() => {
+    setGearRows((prev) => {
+      const next = [...prev, { gearId: null, distanceKm: '' }];
+      if (prev.length === 1 && prev[0].gearId != null) {
         next[0] = { ...prev[0], distanceKm: totalDistance.toFixed(2) };
       }
       return next;
     });
   }, [totalDistance]);
 
-  const removeShoeRow = useCallback((index: number) => {
-    setShoeRows((prev) => prev.filter((_, i) => i !== index));
-    setShoePickerRowIndex(null);
+  const removeGearRow = useCallback((index: number) => {
+    setGearRows((prev) => prev.filter((_, i) => i !== index));
+    setGearPickerRowIndex(null);
   }, []);
 
-  const setRowShoe = useCallback((rowIndex: number, shoeId: number) => {
-    setShoeRows((prev) => {
+  const setRowGear = useCallback((rowIndex: number, gearId: number) => {
+    setGearRows((prev) => {
       const next = [...prev];
-      next[rowIndex] = { ...next[rowIndex], shoeId };
+      next[rowIndex] = { ...next[rowIndex], gearId };
       return next;
     });
-    setShoePickerRowIndex(null);
+    setGearPickerRowIndex(null);
   }, []);
 
   const setRowDistance = useCallback((rowIndex: number, value: string) => {
-    setShoeRows((prev) => {
+    setGearRows((prev) => {
       const next = [...prev];
       next[rowIndex] = { ...next[rowIndex], distanceKm: value };
       return next;
     });
   }, []);
 
-  const selectedShoeIds = new Set(
-    shoeRows.map((r) => r.shoeId).filter((id): id is number => id != null)
+  const selectedGearIds = new Set(
+    gearRows.map((r) => r.gearId).filter((id): id is number => id != null)
   );
+  const availableGear = gearList.filter((g) => g.status === 'active' && !selectedGearIds.has(g.id));
 
   const getRowDistanceDisplay = useCallback(
-    (row: ShoeRow, index: number): string => {
-      if (row.shoeId == null) return row.distanceKm;
-      if (shoeRows.length === 1) return totalDistance.toFixed(2);
+    (row: GearRow, index: number): string => {
+      if (row.gearId == null) return row.distanceKm;
+      if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
     },
-    [shoeRows.length, totalDistance]
+    [gearRows.length, totalDistance]
   );
 
   const getRowDistanceEditable = useCallback(
     (index: number): boolean => {
-      const row = shoeRows[index];
-      if (row?.shoeId == null) return false;
-      return shoeRows.length > 1;
+      const row = gearRows[index];
+      if (row?.gearId == null) return false;
+      return gearRows.length > 1;
     },
-    [shoeRows]
+    [gearRows]
   );
 
-  const shoeDistancesSum = shoeRows.reduce((sum, row) => {
-    if (row.shoeId == null) return sum;
-    if (shoeRows.length === 1) return totalDistance;
+  const gearDistancesSum = gearRows.reduce((sum, row) => {
+    if (row.gearId == null) return sum;
+    if (gearRows.length === 1) return totalDistance;
     return sum + parseNum(row.distanceKm);
   }, 0);
 
   const sumValid =
-    shoeRows.length === 0 ||
-    (shoeRows.every((r) => r.shoeId != null) &&
-      Math.abs(shoeDistancesSum - totalDistance) < 0.001);
+    gearRows.length === 0 ||
+    (gearRows.every((r) => r.gearId != null) &&
+      Math.abs(gearDistancesSum - totalDistance) < 0.001);
 
   const canSave =
     name.trim().length > 0 &&
     sumValid &&
-    (shoeRows.length === 0 || shoeRows.every((r) => r.shoeId != null));
+    (gearRows.length === 0 || gearRows.every((r) => r.gearId != null));
 
   const handleSubmit = useCallback(async () => {
     const trimmedName = name.trim();
@@ -186,8 +198,8 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
       setError('Name is required');
       return;
     }
-    if (!sumValid && shoeRows.length > 0) {
-      setError('Sum of shoe distances must equal activity distance');
+    if (!sumValid && gearRows.length > 0) {
+      setError('Sum of gear distances must equal activity distance');
       return;
     }
     setError(null);
@@ -198,24 +210,22 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         date: formatDateISO(date),
         total_distance_km: totalDistance,
       });
-      if (shoeRows.length > 0) {
-        const shoesPayload = shoeRows
-          .filter((r) => r.shoeId != null)
+      if (gearRows.length > 0) {
+        const gearPayload = gearRows
+          .filter((r) => r.gearId != null)
           .map((r) => ({
-            shoe_id: r.shoeId!,
-            distance_km:
-              shoeRows.length === 1 ? totalDistance : parseNum(r.distanceKm),
+            gear_id: r.gearId!,
+            value: gearRows.length === 1 ? totalDistance : parseNum(r.distanceKm),
           }));
-        await activitiesApi.assignShoes(activityId, shoesPayload);
+        await activitiesApi.assignGear(activityId, gearPayload);
       } else {
-        await activitiesApi.assignShoes(activityId, []);
+        await activitiesApi.assignGear(activityId, []);
       }
       navigation.navigate('Activities');
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data
-              ?.error
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : null;
       setError(msg ?? 'Failed to update activity');
     } finally {
@@ -226,7 +236,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
     name,
     date,
     totalDistance,
-    shoeRows,
+    gearRows,
     sumValid,
     navigation,
   ]);
@@ -248,9 +258,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
             } catch (err: unknown) {
               const msg =
                 err && typeof err === 'object' && 'response' in err
-                  ? (err as {
-                      response?: { data?: { error?: string } };
-                    }).response?.data?.error
+                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
                   : null;
               setError(msg ?? 'Failed to delete activity');
             } finally {
@@ -262,21 +270,29 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
     );
   }, [activityId, navigation]);
 
+  const inputStyle = {
+    height: INPUT_HEIGHT,
+    backgroundColor: tokens.cardBackground,
+    borderColor: tokens.cardBorder,
+    borderRadius: tokens.cardBorderRadius,
+    color: tokens.pageTitleColor,
+  };
+
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading…</Text>
+      <View style={[styles.centered, { backgroundColor: tokens.pageBackground }]}>
+        <ActivityIndicator size="large" color={tokens.loadingIndicator} />
+        <Text style={[styles.loadingText, { color: tokens.textSecondary }]}>Loading…</Text>
       </View>
     );
   }
 
   if (error && !name) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={[styles.centered, { backgroundColor: tokens.pageBackground }]}>
+        <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[styles.retryButton, { backgroundColor: tokens.accent }]}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.retryButtonText}>Go back</Text>
@@ -287,7 +303,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tokens.pageBackground }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -295,25 +311,40 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        {error ? (
+          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
+        ) : null}
 
-        <Text style={styles.label}>Name *</Text>
+        <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Name *</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, inputStyle]}
           value={name}
           onChangeText={setName}
           placeholder="e.g. Morning Run"
-          placeholderTextColor="#999"
+          placeholderTextColor={tokens.profileSecondaryText}
           editable={!submitting}
         />
 
-        <Text style={styles.label}>Date *</Text>
+        <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Date *</Text>
         <TouchableOpacity
-          style={styles.dateButton}
+          style={[
+            styles.dateButton,
+            inputStyle,
+            {
+              borderWidth: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 12,
+            },
+          ]}
           onPress={() => setShowDatePicker(true)}
           disabled={submitting}
         >
-          <Text style={styles.dateButtonText}>{formatDateISO(date)}</Text>
+          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>
+            {formatDateDisplay(date)}
+          </Text>
+          <CalendarIcon size={20} color={tokens.textSecondary} />
         </TouchableOpacity>
         {showDatePicker && (
           <DateTimePicker
@@ -328,87 +359,106 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
             style={styles.datePickerDone}
             onPress={() => setShowDatePicker(false)}
           >
-            <Text style={styles.datePickerDoneText}>Done</Text>
+            <Text style={[styles.datePickerDoneText, { color: tokens.accent }]}>Done</Text>
           </TouchableOpacity>
         )}
 
-        <Text style={styles.label}>Total distance (km)</Text>
+        <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Total Distance (km)</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, inputStyle]}
           value={totalDistanceKm}
           onChangeText={setTotalDistanceKm}
           placeholder="e.g. 5.2"
-          placeholderTextColor="#999"
+          placeholderTextColor={tokens.profileSecondaryText}
           keyboardType="decimal-pad"
           editable={!submitting}
         />
 
-        <Text style={styles.label}>Shoes</Text>
-        {shoes.length === 0 ? (
-          <Text style={styles.hint}>Add shoes first to assign them.</Text>
+        <View style={styles.gearHeader}>
+          <Text style={[styles.label, { color: tokens.pageTitleColor, marginBottom: 0 }]}>Gear</Text>
+          <TouchableOpacity
+            onPress={addGearRow}
+            disabled={submitting || availableGear.length === 0}
+          >
+            <Text style={[styles.addGearLink, { color: tokens.accent }]}>+ Add Gear</Text>
+          </TouchableOpacity>
+        </View>
+        {gearList.length === 0 ? (
+          <Text style={[styles.hint, { color: tokens.profileSecondaryText }]}>
+            Add gear first to assign it.
+          </Text>
         ) : (
           <>
-            {shoeRows.map((row, index) => {
-              const selectedShoe =
-                row.shoeId != null
-                  ? shoes.find((s) => s.id === row.shoeId)
-                  : null;
+            {gearRows.map((row, index) => {
+              const selectedGear =
+                row.gearId != null ? gearList.find((g) => g.id === row.gearId) : null;
               const distanceDisplay = getRowDistanceDisplay(row, index);
               const distanceEditable = getRowDistanceEditable(index);
+              const isPickerActive = gearPickerRowIndex === index;
+              const hasSelection = selectedGear != null;
               return (
                 <View key={index} style={styles.shoeRow}>
                   <TouchableOpacity
-                    style={styles.shoeSelect}
-                    onPress={() =>
-                      !submitting && setShoePickerRowIndex(index)
-                    }
+                    style={[
+                      styles.shoeSelect,
+                      inputStyle,
+                      {
+                        borderWidth: 1,
+                        borderColor: isPickerActive || hasSelection ? tokens.accent : tokens.cardBorder,
+                        flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        paddingHorizontal: 12,
+                      },
+                    ]}
+                    onPress={() => !submitting && setGearPickerRowIndex(index)}
                     disabled={submitting}
                   >
                     <Text
-                      style={
-                        selectedShoe
-                          ? styles.shoeSelectText
-                          : styles.shoeSelectPlaceholder
-                      }
+                      style={{
+                        color: selectedGear ? tokens.pageTitleColor : tokens.profileSecondaryText,
+                        fontSize: 16,
+                      }}
+                      numberOfLines={1}
                     >
-                      {selectedShoe
-                        ? shoeLabel(selectedShoe)
-                        : 'Select shoe'}
+                      {selectedGear ? gearLabel(selectedGear) : 'Select gear'}
                     </Text>
+                    <ChevronDownIcon size={20} color={tokens.textSecondary} />
                   </TouchableOpacity>
                   <TextInput
                     style={[
                       styles.shoeDistanceInput,
-                      !distanceEditable && styles.shoeDistanceDisabled,
+                      {
+                        height: INPUT_HEIGHT,
+                        backgroundColor: tokens.cardBackground,
+                        borderColor: tokens.cardBorder,
+                        borderRadius: tokens.cardBorderRadius,
+                        color: tokens.pageTitleColor,
+                      },
+                      !distanceEditable && { backgroundColor: tokens.cardBorder },
                     ]}
                     value={distanceDisplay}
                     onChangeText={(v) => setRowDistance(index, v)}
                     placeholder="km"
-                    placeholderTextColor="#999"
+                    placeholderTextColor={tokens.profileSecondaryText}
                     keyboardType="decimal-pad"
                     editable={distanceEditable && !submitting}
                   />
                   <TouchableOpacity
                     style={styles.removeButton}
-                    onPress={() => removeShoeRow(index)}
+                    onPress={() => removeGearRow(index)}
                     disabled={submitting}
                   >
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <TrashIcon size={20} color={tokens.textSecondary} />
                   </TouchableOpacity>
                 </View>
               );
             })}
-            <TouchableOpacity
-              style={styles.addShoeButton}
-              onPress={addShoeRow}
-              disabled={submitting || shoes.length === 0}
-            >
-              <Text style={styles.addShoeButtonText}>+ Add shoe</Text>
-            </TouchableOpacity>
-            {!sumValid && shoeRows.length > 0 && (
-              <Text style={styles.sumError}>
-                Sum of distances ({shoeDistancesSum.toFixed(2)} km) must equal
-                activity distance ({totalDistance.toFixed(2)} km)
+            {!sumValid && gearRows.length > 0 && (
+              <Text style={[styles.sumError, { color: tokens.error }]}>
+                Sum of distances ({gearDistancesSum.toFixed(2)} km) must equal activity distance (
+                {totalDistance.toFixed(2)} km)
               </Text>
             )}
           </>
@@ -417,6 +467,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         <TouchableOpacity
           style={[
             styles.submitButton,
+            { backgroundColor: tokens.accent },
             (submitting || !canSave) && styles.submitButtonDisabled,
           ]}
           onPress={handleSubmit}
@@ -430,50 +481,65 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.deleteButton, submitting && styles.deleteButtonDisabled]}
+          style={[
+            styles.deleteButton,
+            { backgroundColor: tokens.destructiveButtonBg },
+            submitting && styles.deleteButtonDisabled,
+          ]}
           onPress={handleDelete}
           disabled={submitting}
         >
-          <Text style={styles.deleteButtonText}>Delete activity</Text>
+          <Text style={styles.deleteButtonText}>Delete Activity</Text>
         </TouchableOpacity>
       </ScrollView>
 
       <Modal
-        visible={shoePickerRowIndex !== null}
+        visible={gearPickerRowIndex !== null}
         transparent
         animationType="slide"
-        onRequestClose={() => setShoePickerRowIndex(null)}
+        onRequestClose={() => setGearPickerRowIndex(null)}
       >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setShoePickerRowIndex(null)}
+          onPress={() => setGearPickerRowIndex(null)}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select shoe</Text>
+          <View
+            style={[
+              styles.modalContent,
+              {
+                backgroundColor: tokens.cardBackground,
+                borderColor: tokens.cardBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-              data={shoes}
+              data={gearList}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =
-                  shoePickerRowIndex != null &&
-                  shoeRows[shoePickerRowIndex]?.shoeId === item.id;
+                  gearPickerRowIndex != null &&
+                  gearRows[gearPickerRowIndex]?.gearId === item.id;
                 const isDisabled =
-                  selectedShoeIds.has(item.id) &&
-                  !(
-                    shoePickerRowIndex != null &&
-                    shoeRows[shoePickerRowIndex]?.shoeId === item.id
-                  );
+                  (selectedGearIds.has(item.id) &&
+                    !(
+                      gearPickerRowIndex != null &&
+                      gearRows[gearPickerRowIndex]?.gearId === item.id
+                    )) ||
+                  item.status === 'retired';
                 return (
                   <TouchableOpacity
                     style={[
                       styles.modalOption,
-                      isSelected && styles.modalOptionSelected,
+                      {
+                        backgroundColor: isSelected ? tokens.accent + '26' : tokens.cardBorder,
+                      },
                       isDisabled && styles.modalOptionDisabled,
                     ]}
                     onPress={() => {
-                      if (!isDisabled && shoePickerRowIndex != null) {
-                        setRowShoe(shoePickerRowIndex, item.id);
+                      if (!isDisabled && gearPickerRowIndex != null) {
+                        setRowGear(gearPickerRowIndex, item.id);
                       }
                     }}
                     disabled={isDisabled}
@@ -481,11 +547,14 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                     <Text
                       style={[
                         styles.modalOptionText,
-                        isDisabled && styles.modalOptionTextDisabled,
+                        {
+                          color: isDisabled ? tokens.profileSecondaryText : tokens.pageTitleColor,
+                        },
                       ]}
                     >
-                      {shoeLabel(item)}
-                      {isDisabled && !isSelected ? ' (already selected)' : ''}
+                      {gearLabel(item)}
+                      {item.status === 'retired' ? ' (retired)' : ''}
+                      {isDisabled && !isSelected && item.status !== 'retired' ? ' (already selected)' : ''}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -493,9 +562,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
             />
             <TouchableOpacity
               style={styles.modalCancel}
-              onPress={() => setShoePickerRowIndex(null)}
+              onPress={() => setGearPickerRowIndex(null)}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={[styles.modalCancelText, { color: tokens.accent }]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -507,7 +576,6 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   centered: {
     flex: 1,
@@ -518,17 +586,14 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
   },
   errorText: {
     fontSize: 14,
-    color: '#dc2626',
     marginBottom: 16,
   },
   retryButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#2563eb',
     borderRadius: 8,
   },
   retryButtonText: {
@@ -543,29 +608,16 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 14,
+    paddingHorizontal: 12,
     fontSize: 16,
     marginBottom: 20,
-    backgroundColor: '#fafafa',
   },
   dateButton: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 14,
     marginBottom: 20,
-    backgroundColor: '#fafafa',
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: '#333',
   },
   datePickerDone: {
     alignSelf: 'flex-end',
@@ -575,11 +627,19 @@ const styles = StyleSheet.create({
   datePickerDoneText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2563eb',
+  },
+  gearHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  addGearLink: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   hint: {
     fontSize: 13,
-    color: '#666',
     marginBottom: 16,
   },
   shoeRow: {
@@ -588,65 +648,24 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  shoeSelect: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: '#fafafa',
-  },
-  shoeSelectText: {
-    fontSize: 15,
-    color: '#333',
-  },
-  shoeSelectPlaceholder: {
-    fontSize: 15,
-    color: '#999',
-  },
+  shoeSelect: {},
   shoeDistanceInput: {
-    width: 70,
+    width: 76,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    backgroundColor: '#fafafa',
+    paddingHorizontal: 8,
+    fontSize: 16,
     textAlign: 'center',
   },
-  shoeDistanceDisabled: {
-    backgroundColor: '#eee',
-    color: '#666',
-  },
   removeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  removeButtonText: {
-    fontSize: 14,
-    color: '#dc2626',
-  },
-  addShoeButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#2563eb',
-    borderRadius: 8,
-  },
-  addShoeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#2563eb',
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sumError: {
     fontSize: 13,
-    color: '#dc2626',
     marginBottom: 16,
   },
   submitButton: {
-    backgroundColor: '#2563eb',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -661,20 +680,18 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   deleteButton: {
-    marginTop: 16,
+    marginTop: 12,
+    borderRadius: 8,
     padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dc2626',
-    borderRadius: 8,
   },
   deleteButtonDisabled: {
     opacity: 0.6,
   },
   deleteButtonText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
-    color: '#dc2626',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -682,16 +699,15 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 24,
     maxHeight: '70%',
+    borderWidth: 1,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 16,
   },
   modalOption: {
@@ -699,20 +715,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     marginBottom: 4,
-    backgroundColor: '#f5f5f5',
-  },
-  modalOptionSelected: {
-    backgroundColor: '#dbeafe',
   },
   modalOptionDisabled: {
     opacity: 0.6,
   },
   modalOptionText: {
     fontSize: 16,
-    color: '#333',
-  },
-  modalOptionTextDisabled: {
-    color: '#999',
   },
   modalCancel: {
     marginTop: 16,
@@ -722,6 +730,5 @@ const styles = StyleSheet.create({
   modalCancelText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#666',
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,34 +8,57 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
-import { shoesApi } from '../api/shoes';
-import type { Shoe } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
+import { PlusIcon } from '../components/icons';
+import { gearApi } from '../api/gear';
+import type { Gear } from '../types';
 import ShoeListItem from '../components/ShoeListItem';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes'>;
 
+type FilterValue = 'all' | 'run' | 'ride' | 'swim' | 'other';
+
+function normalizeActivityType(type: string): FilterValue {
+  const t = type.toLowerCase();
+  if (t.includes('run') || t === 'running' || t === 'walking' || t === 'trail' || t === 'track') return 'run';
+  if (t.includes('ride') || t.includes('cycl') || t === 'bike') return 'ride';
+  if (t.includes('swim')) return 'swim';
+  return 'other';
+}
+
+const FILTERS: { value: FilterValue; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'run', label: 'Run' },
+  { value: 'ride', label: 'Ride' },
+  { value: 'swim', label: 'Swim' },
+  { value: 'other', label: 'Other' },
+];
+
 export default function ShoesScreen({ navigation }: Props) {
-  const [shoes, setShoes] = useState<Shoe[]>([]);
+  const { tokens } = useTheme();
+  const [gear, setGear] = useState<Gear[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterValue>('all');
 
-  const fetchShoes = useCallback(async () => {
+  const fetchGear = useCallback(async () => {
     try {
       setError(null);
-      const data = await shoesApi.list();
-      setShoes(data.shoes ?? []);
+      const data = await gearApi.list({ gear_type: 'shoe' });
+      setGear(data.gear ?? []);
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : null;
-      setError(msg ?? 'Failed to load shoes');
-      setShoes([]);
+      setError(msg ?? 'Failed to load gear');
+      setGear([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -45,36 +68,58 @@ export default function ShoesScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchShoes();
-    }, [fetchShoes])
+      fetchGear();
+    }, [fetchGear])
   );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchShoes();
-  }, [fetchShoes]);
+    fetchGear();
+  }, [fetchGear]);
+
+  const filteredGear = useMemo(() => {
+    if (filter === 'all') return gear;
+    return gear.filter((g) => normalizeActivityType(g.activity_type) === filter);
+  }, [gear, filter]);
 
   const handleSetDefault = useCallback(
-    async (shoe: Shoe) => {
+    async (item: Gear) => {
       try {
-        await shoesApi.setDefault(shoe.id);
-        const data = await shoesApi.list();
-        setShoes(data.shoes ?? []);
+        await gearApi.setDefault(item.id);
+        const data = await gearApi.list({ gear_type: 'shoe' });
+        setGear(data.gear ?? []);
       } catch (err: unknown) {
         const msg =
           err && typeof err === 'object' && 'response' in err
             ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
             : null;
-        Alert.alert('Error', msg ?? 'Failed to set default shoe');
+        Alert.alert('Error', msg ?? 'Failed to set default');
       }
     },
     []
   );
 
-  const handleDelete = useCallback((shoe: Shoe) => {
+  const handleRetire = useCallback(
+    async (item: Gear) => {
+      try {
+        await gearApi.retire(item.id);
+        const data = await gearApi.list({ gear_type: 'shoe' });
+        setGear(data.gear ?? []);
+      } catch (err: unknown) {
+        const msg =
+          err && typeof err === 'object' && 'response' in err
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : null;
+        Alert.alert('Error', msg ?? 'Failed to retire gear');
+      }
+    },
+    []
+  );
+
+  const handleDelete = useCallback((item: Gear) => {
     Alert.alert(
-      'Delete shoe',
-      `Delete ${shoe.brand} ${shoe.model}? This cannot be undone.`,
+      'Delete gear',
+      `Delete ${item.brand} ${item.model}? This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -82,14 +127,14 @@ export default function ShoesScreen({ navigation }: Props) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await shoesApi.remove(shoe.id);
-              setShoes((prev) => prev.filter((s) => s.id !== shoe.id));
+              await gearApi.remove(item.id);
+              setGear((prev) => prev.filter((g) => g.id !== item.id));
             } catch (err: unknown) {
               const msg =
                 err && typeof err === 'object' && 'response' in err
                   ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
                   : null;
-              Alert.alert('Error', msg ?? 'Failed to delete shoe');
+              Alert.alert('Error', msg ?? 'Failed to delete gear');
             }
           },
         },
@@ -98,49 +143,90 @@ export default function ShoesScreen({ navigation }: Props) {
   }, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: Shoe }) => (
+    ({ item }: { item: Gear }) => (
       <ShoeListItem
-        shoe={item}
-        onPress={() => navigation.navigate('Shoes/Edit', { id: item.id })}
+        gear={item}
+        showActivityTypeBadge={filter === 'all'}
+        onPress={() => navigation.navigate('Shoes/Detail', { id: item.id })}
         onSetDefault={() => handleSetDefault(item)}
         onDelete={() => handleDelete(item)}
+        onRetire={() => handleRetire(item)}
       />
     ),
-    [navigation, handleSetDefault, handleDelete]
+    [navigation, handleSetDefault, handleDelete, handleRetire, filter]
   );
 
-  if (loading && shoes.length === 0) {
+  if (loading && gear.length === 0) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading shoes…</Text>
+      <View style={[styles.centered, { backgroundColor: tokens.pageBackground }]}>
+        <ActivityIndicator size="large" color={tokens.loadingIndicator} />
+        <Text style={[styles.loadingText, { color: tokens.textSecondary }]}>Loading gear…</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {error && shoes.length === 0 ? (
+    <View style={[styles.container, { backgroundColor: tokens.pageBackground }]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
+        contentContainerStyle={styles.filterRow}
+      >
+        {FILTERS.map((f) => {
+          const isActive = filter === f.value;
+          return (
+            <TouchableOpacity
+              key={f.value}
+              style={[
+                styles.filterChip,
+                {
+                  backgroundColor: isActive ? tokens.filterActiveBg : tokens.filterInactiveBg,
+                },
+              ]}
+              onPress={() => setFilter(f.value)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  {
+                    color: isActive ? tokens.filterActiveColor : tokens.filterInactiveColor,
+                    fontSize: tokens.filterFontSize,
+                    fontWeight: tokens.filterFontWeight,
+                  },
+                ]}
+              >
+                {f.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {error && gear.length === 0 ? (
         <View style={styles.centered}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => fetchShoes()}>
+          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: tokens.accent }]}
+            onPress={() => fetchGear()}
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           <FlatList
-            data={shoes}
+            data={filteredGear}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
             contentContainerStyle={
-              shoes.length === 0 ? styles.emptyList : styles.listContent
+              filteredGear.length === 0 ? styles.emptyList : styles.listContent
             }
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No shoes yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Add your first pair to start tracking mileage.
+                <Text style={[styles.emptyTitle, { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily }]}>No gear yet</Text>
+                <Text style={[styles.emptySubtitle, { color: tokens.textSecondary }]}>
+                  Add your first item to start tracking mileage.
                 </Text>
               </View>
             }
@@ -148,15 +234,23 @@ export default function ShoesScreen({ navigation }: Props) {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={['#2563eb']}
+                colors={[tokens.accent]}
               />
             }
           />
           <TouchableOpacity
-            style={styles.fab}
+            style={[
+              styles.fab,
+              {
+                backgroundColor: tokens.fabBackground,
+                width: tokens.fabSize,
+                height: tokens.fabSize,
+                borderRadius: tokens.fabSize / 2,
+              },
+            ]}
             onPress={() => navigation.navigate('Shoes/Add')}
           >
-            <Text style={styles.fabText}>+ Add Shoe</Text>
+            <PlusIcon size={24} color="#fff" />
           </TouchableOpacity>
         </>
       )}
@@ -167,8 +261,23 @@ export default function ShoesScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
+  filterScroll: {
+    maxHeight: 44,
+    marginBottom: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 100,
+  },
+  filterChipText: {},
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -178,18 +287,15 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#666',
   },
   errorText: {
     fontSize: 16,
-    color: '#dc2626',
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
     paddingVertical: 12,
     paddingHorizontal: 24,
-    backgroundColor: '#2563eb',
     borderRadius: 8,
   },
   retryButtonText: {
@@ -198,12 +304,12 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   listContent: {
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingBottom: 80,
+    paddingBottom: 100,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -212,27 +318,17 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
   fab: {
     position: 'absolute',
     bottom: 24,
-    left: 16,
-    right: 16,
-    backgroundColor: '#2563eb',
-    borderRadius: 12,
-    paddingVertical: 16,
+    right: 24,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  fabText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
   },
 });

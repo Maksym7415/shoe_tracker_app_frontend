@@ -9,6 +9,7 @@ export type MainStackParamList = {
   Shoes: undefined;
   'Shoes/Add': undefined;
   'Shoes/Edit': { id: number };
+  'Shoes/Detail': { id: number };
   Activities: undefined;
   'Activities/Add': undefined;
   'Activities/Detail': { id: number };

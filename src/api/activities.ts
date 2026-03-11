@@ -1,5 +1,5 @@
 import client from './client';
-import type { Activity, ActivityShoe } from '../types';
+import type { Activity, ActivityShoe, ActivityGear } from '../types';
 
 export interface ActivityCreatePayload {
   name: string;
@@ -48,6 +48,11 @@ export const activitiesApi = {
   assignShoes: (activityId: number, shoes: ActivityShoe[]) =>
     client
       .put<ActivitySingleResponse>(`/api/activities/${activityId}/shoes`, shoes)
+      .then((res) => res.data),
+
+  assignGear: (activityId: number, gear: ActivityGear[]) =>
+    client
+      .put<ActivitySingleResponse>(`/api/activities/${activityId}/gear`, gear)
       .then((res) => res.data),
 
   remove: (id: number) =>

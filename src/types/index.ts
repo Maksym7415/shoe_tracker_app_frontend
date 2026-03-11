@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   avatar_url?: string;
+  preferred_distance_unit?: 'km' | 'miles';
   strava_connected?: boolean;
 }
 
@@ -18,9 +19,55 @@ export interface Shoe {
   distance_covered_km?: number | null;
 }
 
+export interface Gear {
+  id: number;
+  activity_type: string;
+  gear_type: string;
+  brand: string;
+  model: string;
+  nick?: string;
+  metric_type: string;
+  max_value: number;
+  value_covered: number;
+  is_default: boolean;
+  status: 'active' | 'retired';
+  created_at: string;
+  installations?: Installation[];
+  services?: Service[];
+}
+
+export interface Installation {
+  id: number;
+  parent_gear_id: number;
+  installed_at: string;
+  removed_at: string | null;
+}
+
+export interface Service {
+  id: number;
+  name: string;
+  interval_value: number;
+  interval_unit: string;
+  early_warning_ratio: number;
+  last_performed_value?: number;
+}
+
+export interface GearAlert {
+  gear_id: number;
+  type: 'max_value' | 'service_overdue' | 'service_warning';
+  service_id?: number;
+  message: string;
+}
+
 export interface ActivityShoe {
   shoe_id: number;
   distance_km: number;
+}
+
+export interface ActivityGear {
+  gear_id: number;
+  value: number;
+  excluded_component_ids?: number[];
 }
 
 export interface Activity {
@@ -28,8 +75,10 @@ export interface Activity {
   name: string;
   date: string;
   total_distance_km: number;
+  activity_type?: string;
   source: 'manual' | 'strava';
   strava_activity_id?: number | null;
   created_at?: string;
   shoes?: ActivityShoe[];
+  gear?: ActivityGear[];
 }
