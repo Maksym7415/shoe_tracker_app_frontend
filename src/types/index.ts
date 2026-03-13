@@ -27,11 +27,12 @@ export interface Gear {
   model: string;
   nick?: string;
   metric_type: string;
-  max_value: number;
-  value_covered: number;
+  max_value: number | null;
+  value_covered: number | null;
   is_default: boolean;
   status: 'active' | 'retired';
   created_at: string;
+  components_count?: number;
   installations?: Installation[];
   services?: Service[];
 }
@@ -67,6 +68,7 @@ export interface ActivityShoe {
 export interface ActivityGear {
   gear_id: number;
   value: number;
+  active_component_ids?: number[];
   excluded_component_ids?: number[];
 }
 
@@ -79,6 +81,7 @@ export interface Activity {
   source: 'manual' | 'strava';
   strava_activity_id?: number | null;
   created_at?: string;
+  moving_time_seconds?: number | null;
   shoes?: ActivityShoe[];
   gear?: ActivityGear[];
 }

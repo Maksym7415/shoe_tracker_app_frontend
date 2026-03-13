@@ -25,22 +25,32 @@ export interface GearCreatePayload {
   metric_type?: string;
   max_value: number;
   value_covered?: number;
+  parent_gear_id?: number | null;
 }
 
 export interface GearUpdatePayload {
   activity_type?: string;
+  gear_type?: string;
   brand?: string;
   model?: string;
   nick?: string;
   max_value?: number | null;
   value_covered?: number | null;
+  parent_gear_id?: number | null;
 }
 
 export interface ServiceCreatePayload {
   name: string;
   interval_value: number;
-  interval_unit: string;
+  interval_unit?: string;
   early_warning_ratio?: number;
+}
+
+export interface ServiceUpdatePayload {
+  name?: string;
+  interval_value?: number;
+  interval_unit?: string;
+  early_warning_ratio?: number | null;
 }
 
 export interface AlertsResponse {
@@ -67,6 +77,11 @@ export const gearApi = {
 
   get: (id: number) =>
     client.get<GearSingleResponse>(`/api/gear/${id}`).then((res) => res.data),
+
+  getComponents: (parentId: number) =>
+    client
+      .get<{ success: boolean; components: Gear[] }>(`/api/gear/${parentId}/components`)
+      .then((res) => res.data),
 
   update: (id: number, payload: GearUpdatePayload) =>
     client.put<GearSingleResponse>(`/api/gear/${id}`, payload).then((res) => res.data),
@@ -95,7 +110,20 @@ export const gearApi = {
 
   createService: (gearId: number, payload: ServiceCreatePayload) =>
     client
-      .post<{ success: boolean }>(`/api/gear/${gearId}/services`, payload)
+      .post<{ success: boolean; service: Service }>(`/api/gear/${gearId}/services`, payload)
+      .then((res) => res.data),
+
+  updateService: (gearId: number, serviceId: number, payload: ServiceUpdatePayload) =>
+    client
+      .put<{ success: boolean; service: Service }>(
+        `/api/gear/${gearId}/services/${serviceId}`,
+        payload
+      )
+      .then((res) => res.data),
+
+  removeService: (gearId: number, serviceId: number) =>
+    client
+      .delete<{ success: boolean }>(`/api/gear/${gearId}/services/${serviceId}`)
       .then((res) => res.data),
 
   logService: (gearId: number, serviceId: number) =>

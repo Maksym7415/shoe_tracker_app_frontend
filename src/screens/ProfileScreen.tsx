@@ -27,20 +27,12 @@ import { activitiesApi } from '../api/activities';
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
   const { tokens } = useTheme();
-  const [name, setName] = useState(user?.name ?? '');
   const [loading, setLoading] = useState(false);
   const [stravaLoading, setStravaLoading] = useState(false);
   const [stravaConnected, setStravaConnected] = useState<boolean | null>(null);
   const [totalGears, setTotalGears] = useState<number | null>(null);
   const [totalActivities, setTotalActivities] = useState<number | null>(null);
-  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
   const [alerts, setAlerts] = useState<Array<{ gear_id: number; type: string; message: string }>>([]);
-
-  React.useEffect(() => {
-    setName(user?.name ?? '');
-  }, [user?.name]);
 
   useFocusEffect(
     useCallback(() => {
@@ -85,7 +77,7 @@ export default function ProfileScreen() {
     try {
       const asset = result.assets[0];
       const mimeType = asset.mimeType ?? 'image/jpeg';
-      await authApi.updateProfileWithAvatar(name, asset.uri, mimeType);
+      await authApi.updateProfileWithAvatar(user?.name ?? '', asset.uri, mimeType);
       await refreshUser();
     } catch (err) {
       Alert.alert('Error', 'Failed to update avatar. The backend may not support avatar upload yet.');
@@ -110,7 +102,7 @@ export default function ProfileScreen() {
     try {
       const asset = result.assets[0];
       const mimeType = asset.mimeType ?? 'image/jpeg';
-      await authApi.updateProfileWithAvatar(name, asset.uri, mimeType);
+      await authApi.updateProfileWithAvatar(user?.name ?? '', asset.uri, mimeType);
       await refreshUser();
     } catch (err) {
       Alert.alert('Error', 'Failed to update avatar. The backend may not support avatar upload yet.');
@@ -125,35 +117,6 @@ export default function ProfileScreen() {
       { text: 'Photo library', onPress: pickImage },
       { text: 'Cancel', style: 'cancel' },
     ]);
-  };
-
-  const handleSaveName = async () => {
-    if (!name.trim()) return;
-    setLoading(true);
-    try {
-      await authApi.updateProfile({ name: name.trim() });
-      await refreshUser();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update profile.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!forgotPasswordEmail.trim()) {
-      Alert.alert('Error', 'Please enter your email.');
-      return;
-    }
-    setLoading(true);
-    try {
-      await authApi.forgotPassword(forgotPasswordEmail.trim());
-      setForgotPasswordSent(true);
-    } catch (err) {
-      Alert.alert('Error', 'Failed to send reset email.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleConnectStrava = async () => {
@@ -183,6 +146,28 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleDisconnectStrava = async () => {
+    Alert.alert('Disconnect Strava', 'Are you sure you want to disconnect Strava?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          setStravaLoading(true);
+          try {
+            await stravaApi.disconnect();
+            await refreshUser();
+            setStravaConnected(false);
+          } catch {
+            Alert.alert('Error', 'Failed to disconnect Strava.');
+          } finally {
+            setStravaLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleLogout = () => {
     Alert.alert('Log out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -191,6 +176,9 @@ export default function ProfileScreen() {
   };
 
   if (!user) return null;
+
+  const distanceUnitLabel =
+    (user.preferred_distance_unit ?? 'km') === 'km' ? 'Kilometers (km)' : 'Miles';
 
   return (
     <KeyboardAvoidingView
@@ -216,60 +204,18 @@ export default function ProfileScreen() {
             </View>
           )}
         </TouchableOpacity>
-        <TextInput
-          style={[styles.nameInput, { color: tokens.pageTitleColor }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor={tokens.profileSecondaryText}
-          editable={!loading}
-          onBlur={handleSaveName}
-        />
+        <Text style={[styles.nameText, { color: tokens.pageTitleColor }]}>{user.name}</Text>
         <Text style={[styles.email, { color: tokens.profileSecondaryText }]}>{user.email}</Text>
 
         <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
-          <Text style={[styles.quickStatsTitle, { color: tokens.pageTitleColor }]}>Distance Unit</Text>
-          <View style={styles.distanceUnitRow}>
-            <TouchableOpacity
-              style={[
-                styles.unitChip,
-                { backgroundColor: (user.preferred_distance_unit ?? 'km') === 'km' ? tokens.accent : tokens.cardBorder },
-              ]}
-              onPress={async () => {
-                setLoading(true);
-                try {
-                  await authApi.updateProfile({ preferred_distance_unit: 'km' });
-                  await refreshUser();
-                } catch {
-                  Alert.alert('Error', 'Failed to update preference.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-            >
-              <Text style={[styles.unitChipText, { color: (user.preferred_distance_unit ?? 'km') === 'km' ? '#fff' : tokens.pageTitleColor }]}>km</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.unitChip,
-                { backgroundColor: user.preferred_distance_unit === 'miles' ? tokens.accent : tokens.cardBorder },
-              ]}
-              onPress={async () => {
-                setLoading(true);
-                try {
-                  await authApi.updateProfile({ preferred_distance_unit: 'miles' });
-                  await refreshUser();
-                } catch {
-                  Alert.alert('Error', 'Failed to update preference.');
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-            >
-              <Text style={[styles.unitChipText, { color: user.preferred_distance_unit === 'miles' ? '#fff' : tokens.pageTitleColor }]}>miles</Text>
-            </TouchableOpacity>
+          <Text style={[styles.settingsTitle, { color: tokens.pageTitleColor }]}>Settings</Text>
+          <View style={styles.settingsRow}>
+            <Text style={[styles.settingsLabel, { color: tokens.profileSecondaryText }]}>
+              Distance Unit
+            </Text>
+            <Text style={[styles.settingsValue, { color: tokens.pageTitleColor }]}>
+              {distanceUnitLabel}
+            </Text>
           </View>
         </View>
 
@@ -283,9 +229,19 @@ export default function ProfileScreen() {
               </View>
             </View>
             {stravaConnected ? (
-              <View style={[styles.connectBtn, { backgroundColor: tokens.cardBorder }]}>
-                <Text style={[styles.connectBtnText, { color: tokens.profileSecondaryText }]}>Connected</Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.connectBtn, { backgroundColor: tokens.cardBorder }]}
+                onPress={handleDisconnectStrava}
+                disabled={stravaLoading}
+              >
+                {stravaLoading ? (
+                  <ActivityIndicator color={tokens.profileSecondaryText} size="small" />
+                ) : (
+                  <Text style={[styles.connectBtnText, { color: tokens.profileSecondaryText }]}>
+                    Disconnect
+                  </Text>
+                )}
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 style={[styles.connectBtn, { backgroundColor: tokens.accent }]}
@@ -334,56 +290,6 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>Reset password</Text>
-          {!showForgotPassword ? (
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={() => setShowForgotPassword(true)}
-              disabled={loading}
-            >
-              <Text style={[styles.linkText, { color: tokens.accent }]}>Forgot password?</Text>
-            </TouchableOpacity>
-          ) : forgotPasswordSent ? (
-            <Text style={[styles.successText, { color: '#2bd4bd' }]}>Check your email for the reset link.</Text>
-          ) : (
-            <View>
-              <TextInput
-                style={[styles.input, { borderColor: tokens.cardBorder, backgroundColor: tokens.cardBackground, color: tokens.pageTitleColor }]}
-                placeholder="Enter your email"
-                placeholderTextColor={tokens.profileSecondaryText}
-                value={forgotPasswordEmail}
-                onChangeText={setForgotPasswordEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                editable={!loading}
-              />
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: tokens.accent }]}
-                onPress={handleForgotPassword}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.buttonText}>Send reset email</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.linkButton}
-                onPress={() => {
-                  setShowForgotPassword(false);
-                  setForgotPasswordSent(false);
-                  setForgotPasswordEmail('');
-                }}
-                disabled={loading}
-              >
-                <Text style={[styles.linkText, { color: tokens.accent }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
         <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
           <Text style={styles.logoutButtonText}>Log out</Text>
         </TouchableOpacity>
@@ -427,12 +333,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  nameInput: {
+  nameText: {
     fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 4,
-    padding: 8,
   },
   email: {
     fontSize: 14,
@@ -484,17 +389,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
-  distanceUnitRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  unitChip: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  unitChipText: {
+  settingsTitle: {
     fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  settingsLabel: {
+    fontSize: 14,
+  },
+  settingsValue: {
+    fontSize: 14,
     fontWeight: '600',
   },
   quickStatsRow: {
@@ -517,21 +426,6 @@ const styles = StyleSheet.create({
   alertRow: {},
   alertText: {
     fontSize: 14,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 8,
   },
   button: {
     borderRadius: 8,

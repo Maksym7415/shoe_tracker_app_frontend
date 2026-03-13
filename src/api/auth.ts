@@ -24,7 +24,12 @@ export const authApi = {
 
   me: () => client.get<User>('/api/auth/me'),
 
-  updateProfile: (data: { name?: string; avatar_url?: string; preferred_distance_unit?: 'km' | 'miles' }) =>
+  updateProfile: (data: {
+    name?: string;
+    email?: string;
+    avatar_url?: string;
+    preferred_distance_unit?: 'km' | 'miles';
+  }) =>
     client.put<User>('/api/auth/profile', data),
 
   updateProfileWithAvatar: (name: string, avatarUri: string, avatarType: string = 'image/jpeg') => {

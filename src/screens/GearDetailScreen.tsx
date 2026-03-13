@@ -17,6 +17,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { formatDistance } from '../utils/formatDistance';
 import { gearApi } from '../api/gear';
 import type { Gear, Service } from '../types';
+import { StarIcon, ChevronRightIcon, ChevronDownIcon } from '../components/icons';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Detail'>;
 
@@ -29,12 +30,21 @@ export default function GearDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [componentsExpanded, setComponentsExpanded] = useState(false);
+  const [servicesExpanded, setServicesExpanded] = useState(false);
+  const [components, setComponents] = useState<Gear[]>([]);
 
   const fetchGear = useCallback(async () => {
     try {
       setError(null);
-      const data = await gearApi.get(gearId);
-      setGear(data.gear);
+      const [gearRes, componentsRes] = await Promise.all([
+        gearApi.get(gearId),
+        gearApi.getComponents(gearId).catch(() => null),
+      ]);
+      setGear(gearRes.gear);
+      setComponents(componentsRes?.components ?? []);
+      setComponentsExpanded(false);
+      setServicesExpanded(false);
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -59,33 +69,6 @@ export default function GearDetailScreen({ route, navigation }: Props) {
     setRefreshing(true);
     fetchGear();
   }, [fetchGear]);
-
-  const handleRetire = useCallback(() => {
-    if (!gear) return;
-    Alert.alert(
-      'Retire gear',
-      `Retire ${gear.brand} ${gear.model}? You can still view it but it won't appear in activity assignment.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Retire',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await gearApi.retire(gearId);
-              navigation.goBack();
-            } catch (err: unknown) {
-              const msg =
-                err && typeof err === 'object' && 'response' in err
-                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-                  : null;
-              Alert.alert('Error', msg ?? 'Failed to retire gear');
-            }
-          },
-        },
-      ]
-    );
-  }, [gear, gearId, navigation]);
 
   if (loading && !gear) {
     return (
@@ -113,10 +96,57 @@ export default function GearDetailScreen({ route, navigation }: Props) {
   if (!gear) return null;
 
   const gearName = gear.nick?.trim() ? gear.nick : `${gear.brand} ${gear.model}`;
-  const mileage = formatDistance(gear.value_covered ?? 0, unit);
-  const maxMileage = formatDistance(gear.max_value ?? 0, unit);
+  const subtitle = gear.nick?.trim() ? `${gear.brand} ${gear.model}` : null;
+  const rawCurrent = gear.value_covered ?? 0;
+  const rawMax = gear.max_value ?? null;
+  const isMaxSet = rawMax != null && rawMax > 0;
+  const mileage = formatDistance(rawCurrent, unit);
+  const maxMileage = isMaxSet ? formatDistance(rawMax, unit) : null;
   const isRetired = gear.status === 'retired';
   const services = gear.services ?? [];
+
+  type FilterType = 'all' | 'run' | 'ride' | 'swim' | 'other';
+
+  const normalizeActivityType = (type: string): FilterType => {
+    const t = type.toLowerCase();
+    if (t.includes('run') || t === 'running' || t === 'walking' || t === 'trail' || t === 'track') return 'run';
+    if (t.includes('ride') || t.includes('cycl') || t === 'bike') return 'ride';
+    if (t.includes('swim')) return 'swim';
+    return 'other';
+  };
+
+  const getBadgeStyle = (filterType: FilterType) => {
+    switch (filterType) {
+      case 'run':
+        return { color: tokens.badgeRunColor, backgroundColor: tokens.badgeRunBg };
+      case 'ride':
+        return { color: tokens.badgeRideColor, backgroundColor: tokens.badgeRideBg };
+      case 'swim':
+        return { color: tokens.badgeSwimColor, backgroundColor: tokens.badgeSwimBg };
+      default:
+        return { color: tokens.badgeOtherColor, backgroundColor: tokens.badgeOtherBg };
+    }
+  };
+
+  const filterTypeLabel = (filterType: FilterType): string => {
+    switch (filterType) {
+      case 'run':
+        return 'Run';
+      case 'ride':
+        return 'Ride';
+      case 'swim':
+        return 'Swim';
+      case 'other':
+        return 'Other';
+      default:
+        return filterType;
+    }
+  };
+
+  const filterType = normalizeActivityType(gear.activity_type);
+  const badgeStyle = getBadgeStyle(filterType);
+  const addedDate = new Date(gear.created_at);
+  const addedLabel = `Added ${addedDate.toLocaleDateString()}`;
 
   return (
     <ScrollView
@@ -126,53 +156,214 @@ export default function GearDetailScreen({ route, navigation }: Props) {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[tokens.accent]} />
       }
     >
-      <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
-        <Text style={[styles.title, { color: tokens.pageTitleColor }]}>{gearName}</Text>
-        <Text style={[styles.subtitle, { color: tokens.textSecondary }]}>
-          {gear.brand} {gear.model}
-        </Text>
-        <View style={styles.statsRow}>
-          <Text style={[styles.statLabel, { color: tokens.textSecondary }]}>Distance: </Text>
-          <Text style={[styles.statValue, { color: tokens.pageTitleColor }]}>{mileage} / {maxMileage}</Text>
-        </View>
-        {isRetired && (
-          <View style={[styles.retiredBadge, { backgroundColor: tokens.cardBorder }]}>
-            <Text style={[styles.retiredText, { color: tokens.textSecondary }]}>RETIRED</Text>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: tokens.cardBackground,
+            borderColor: tokens.cardBorder,
+            borderRadius: tokens.cardBorderRadius,
+          },
+        ]}
+      >
+        <View style={styles.headerRow}>
+          <View style={styles.headerMain}>
+            <View style={styles.titleRow}>
+              <Text
+                style={[
+                  styles.title,
+                  {
+                    color: tokens.gearItemHeaderColor,
+                    fontSize: tokens.gearItemHeaderFontSize,
+                    fontWeight: tokens.gearItemHeaderFontWeight,
+                    fontFamily: tokens.gearItemHeaderFontFamily,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {gearName}
+              </Text>
+              {gear.is_default && (
+                <View style={[styles.defaultBadge, { backgroundColor: tokens.accent + '26' }]}>
+                  <StarIcon size={12} color={tokens.gearItemDefaultBadgeColor} />
+                  <Text
+                    style={[
+                      styles.defaultText,
+                      {
+                        color: tokens.gearItemDefaultBadgeColor,
+                        fontSize: tokens.gearItemDefaultBadgeFontSize,
+                      },
+                    ]}
+                  >
+                    DEFAULT
+                  </Text>
+                </View>
+              )}
+              {isRetired && (
+                <View style={[styles.retiredBadge, { backgroundColor: tokens.cardBorder }]}>
+                  <Text style={[styles.retiredText, { color: tokens.textSecondary }]}>RETIRED</Text>
+                </View>
+              )}
+            </View>
+            {subtitle && (
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: tokens.gearItemSubtitleColor, fontSize: tokens.gearItemSubtitleFontSize },
+                ]}
+                numberOfLines={1}
+              >
+                {subtitle}
+              </Text>
+            )}
+            <Text style={[styles.addedText, { color: tokens.textSecondary }]}>{addedLabel}</Text>
           </View>
-        )}
+          <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
+            <Text
+              style={[
+                styles.typeBadgeText,
+                {
+                  color: badgeStyle.color,
+                  fontSize: tokens.badgeFontSize,
+                  fontWeight: tokens.badgeFontWeight,
+                },
+              ]}
+            >
+              {filterTypeLabel(filterType)}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.distanceSection}>
+          <Text style={[styles.distanceValue, { color: tokens.pageTitleColor }]}>
+            {isMaxSet ? `${mileage} / ${maxMileage}` : mileage}
+          </Text>
+          {isMaxSet && (
+            <View
+              style={[
+                styles.progressTrack,
+                { backgroundColor: tokens.cardBorder },
+              ]}
+            >
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: tokens.accent,
+                    width: `${Math.min(1, Math.max(0, rawMax ? rawCurrent / rawMax : 0)) * 100}%`,
+                  },
+                ]}
+              />
+            </View>
+          )}
+        </View>
       </View>
 
-      <View style={styles.actions}>
-        {!isRetired && (
-          <>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: tokens.accent }]}
-              onPress={() => navigation.navigate('Shoes/Edit', { id: gearId })}
-            >
-              <Text style={styles.buttonText}>Edit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.retireButton, { borderColor: tokens.cardBorder }]}
-              onPress={handleRetire}
-            >
-              <Text style={[styles.retireButtonText, { color: tokens.textSecondary }]}>Retire</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+      {components.length > 0 && (
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.cardBackground,
+              borderColor: tokens.cardBorder,
+              borderRadius: tokens.cardBorderRadius,
+            },
+          ]}
+        >
+          <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>Components</Text>
+          <TouchableOpacity
+            style={[styles.componentsRow, { borderTopColor: tokens.cardBorder }]}
+            onPress={() => setComponentsExpanded((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.componentsText, { color: tokens.accent }]}>
+              {components.length === 1 ? '1 component' : `${components.length} components`}
+            </Text>
+            {componentsExpanded ? (
+              <ChevronDownIcon size={16} color={tokens.accent} />
+            ) : (
+              <ChevronRightIcon size={16} color={tokens.accent} />
+            )}
+          </TouchableOpacity>
+          {componentsExpanded && components.length > 0 && (
+            <View style={[styles.componentsList, { borderTopColor: tokens.cardBorder }]}>
+              {components.map((c) => {
+                const compName = c.nick?.trim() ? c.nick : `${c.brand} ${c.model}`;
+                const compSubtitle = c.nick?.trim() ? c.brand : c.model;
+                const compMileage = formatDistance(c.value_covered ?? 0, unit);
+                return (
+                  <View
+                    key={c.id}
+                    style={[
+                      styles.componentRow,
+                      { backgroundColor: tokens.pageBackground, borderColor: tokens.cardBorder },
+                    ]}
+                  >
+                    <View style={styles.componentMain}>
+                      <Text
+                        style={[styles.componentName, { color: tokens.pageTitleColor }]}
+                        numberOfLines={1}
+                      >
+                        {compName}
+                      </Text>
+                      <Text
+                        style={[styles.componentSubtitle, { color: tokens.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {compSubtitle}
+                      </Text>
+                    </View>
+                    <Text style={[styles.componentMileage, { color: tokens.gearItemMileageColor }]}>
+                      {compMileage}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
+      )}
 
       {services.length > 0 ? (
-        <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.cardBackground,
+              borderColor: tokens.cardBorder,
+              borderRadius: tokens.cardBorderRadius,
+            },
+          ]}
+        >
           <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>Services</Text>
-          {services.map((s) => (
-            <View key={s.id} style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}>
-              <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>{s.name}</Text>
-              <Text style={[styles.serviceDetail, { color: tokens.textSecondary }]}>
-                Every {s.interval_value} {s.interval_unit}
-                {s.last_performed_value != null ? ` · Last at ${s.last_performed_value} ${s.interval_unit}` : ''}
-              </Text>
+          <TouchableOpacity
+            style={[styles.componentsRow, { borderTopColor: tokens.cardBorder }]}
+            onPress={() => setServicesExpanded((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.componentsText, { color: tokens.accent }]}>
+              {services.length === 1 ? '1 service' : `${services.length} services`}
+            </Text>
+            {servicesExpanded ? (
+              <ChevronDownIcon size={16} color={tokens.accent} />
+            ) : (
+              <ChevronRightIcon size={16} color={tokens.accent} />
+            )}
+          </TouchableOpacity>
+          {servicesExpanded && (
+            <View style={[styles.servicesList, { borderTopColor: tokens.cardBorder }]}>
+              {services.map((s) => (
+                <View key={s.id} style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}>
+                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>{s.name}</Text>
+                  <Text style={[styles.serviceDetail, { color: tokens.textSecondary }]}>
+                    Every {s.interval_value} {s.interval_unit}
+                    {s.last_performed_value != null
+                      ? ` · Last at ${s.last_performed_value} ${s.interval_unit}`
+                      : ''}
+                  </Text>
+                </View>
+              ))}
             </View>
-          ))}
+          )}
         </View>
       ) : null}
     </ScrollView>
@@ -248,30 +439,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  retireButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-  },
-  retireButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -288,5 +455,118 @@ const styles = StyleSheet.create({
   },
   serviceDetail: {
     fontSize: 13,
+  },
+  distanceSection: {
+    marginTop: 16,
+  },
+  distanceValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  headerMain: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  defaultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+  },
+  defaultText: {
+    fontWeight: '600',
+  },
+  addedText: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  typeBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 100,
+  },
+  typeBadgeText: {},
+  componentsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    marginTop: 8,
+    borderTopWidth: 1,
+  },
+  componentsText: {
+    fontSize: 14,
+  },
+  componentsEmpty: {
+    marginTop: 4,
+  },
+  componentsEmptyText: {
+    fontSize: 14,
+  },
+  componentsList: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    gap: 8,
+  },
+  componentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  componentMain: {
+    flex: 1,
+  },
+  componentName: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  componentSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  componentMileage: {
+    fontSize: 12,
+  },
+  servicesHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    marginTop: 8,
+    borderTopWidth: 1,
+  },
+  servicesList: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    gap: 8,
   },
 });

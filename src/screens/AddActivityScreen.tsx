@@ -27,6 +27,13 @@ type GearRow = { gearId: number | null; distanceKm: string };
 
 const INPUT_HEIGHT = 40;
 
+const ACTIVITY_TYPE_OPTIONS: { value: 'run' | 'bike' | 'swim' | 'other'; label: string }[] = [
+  { value: 'run', label: 'Running' },
+  { value: 'bike', label: 'Bike' },
+  { value: 'swim', label: 'Swim' },
+  { value: 'other', label: 'Walk' },
+];
+
 function formatDateISO(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -51,6 +58,8 @@ export default function AddActivityScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const [name, setName] = useState('');
   const [date, setDate] = useState(new Date());
+  const [activityType, setActivityType] = useState<'run' | 'bike' | 'swim' | 'other'>('run');
+  const [activityTypeDropdownVisible, setActivityTypeDropdownVisible] = useState(false);
   const [totalDistanceKm, setTotalDistanceKm] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -70,11 +79,14 @@ export default function AddActivityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    gearApi
-      .list({ gear_type: 'shoe' })
-      .then((data) => {
+    Promise.all([
+      gearApi.list({ gear_type: 'shoe' }),
+      gearApi.list({ gear_type: 'bike' }),
+    ])
+      .then(([shoesRes, bikesRes]) => {
         if (cancelled) return;
-        setGearList(data.gear ?? []);
+        const all = [...(shoesRes.gear ?? []), ...(bikesRes.gear ?? [])];
+        setGearList(all);
       })
       .catch(() => {
         if (!cancelled) setGearList([]);
@@ -124,7 +136,11 @@ export default function AddActivityScreen({ navigation }: Props) {
   const selectedGearIds = new Set(
     gearRows.map((r) => r.gearId).filter((id): id is number => id != null)
   );
-  const availableGear = gearList.filter((g) => g.status === 'active' && !selectedGearIds.has(g.id));
+  const availableGear = gearList.filter((g) => {
+    if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
+    if (activityType === 'bike') return g.gear_type === 'bike';
+    return g.gear_type === 'shoe';
+  });
 
   const getRowDistanceDisplay = useCallback(
     (row: GearRow, index: number): string => {
@@ -176,6 +192,7 @@ export default function AddActivityScreen({ navigation }: Props) {
       const payload = {
         name: trimmedName,
         date: formatDateISO(date),
+        activity_type: activityType,
         total_distance_km: totalDistance,
         auto_add_default_shoe: gearRows.length === 0,
       };
@@ -192,7 +209,7 @@ export default function AddActivityScreen({ navigation }: Props) {
         await activitiesApi.assignGear(activityId, gearPayload);
       }
 
-      navigation.navigate('Activities');
+      navigation.navigate('Activities/List');
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -205,6 +222,7 @@ export default function AddActivityScreen({ navigation }: Props) {
   }, [
     name,
     date,
+    activityType,
     totalDistanceKm,
     totalDistance,
     gearRows,
@@ -281,6 +299,84 @@ export default function AddActivityScreen({ navigation }: Props) {
             <Text style={[styles.datePickerDoneText, { color: tokens.accent }]}>Done</Text>
           </TouchableOpacity>
         )}
+
+        <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Activity Type</Text>
+        <TouchableOpacity
+          style={[
+            styles.dateButton,
+            inputStyle,
+            {
+              borderWidth: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 12,
+            },
+          ]}
+          onPress={() => !submitting && setActivityTypeDropdownVisible(true)}
+          disabled={submitting}
+        >
+          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>
+            {ACTIVITY_TYPE_OPTIONS.find((o) => o.value === activityType)?.label ?? 'Running'}
+          </Text>
+          <ChevronDownIcon size={20} color={tokens.textSecondary} />
+        </TouchableOpacity>
+
+        <Modal
+          visible={activityTypeDropdownVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setActivityTypeDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setActivityTypeDropdownVisible(false)}
+          >
+            <View
+              style={[
+                styles.modalContent,
+                {
+                  backgroundColor: tokens.cardBackground,
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+              onStartShouldSetResponder={() => true}
+            >
+              <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>
+                Activity Type
+              </Text>
+              {ACTIVITY_TYPE_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.modalOption,
+                    { backgroundColor: opt.value === activityType ? tokens.accent + '26' : tokens.cardBorder },
+                  ]}
+                  onPress={() => {
+                    setActivityType(opt.value);
+                    setActivityTypeDropdownVisible(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.modalOptionText,
+                      { color: tokens.pageTitleColor },
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setActivityTypeDropdownVisible(false)}
+              >
+                <Text style={[styles.modalCancelText, { color: tokens.accent }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
 
         <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Total Distance (km)</Text>
         <TextInput

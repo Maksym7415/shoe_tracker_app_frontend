@@ -4,6 +4,7 @@ import type { Activity, ActivityShoe, ActivityGear } from '../types';
 export interface ActivityCreatePayload {
   name: string;
   date: string;
+  activity_type?: 'run' | 'bike' | 'swim' | 'other';
   total_distance_km?: number;
   auto_add_default_shoe?: boolean;
 }
@@ -11,6 +12,7 @@ export interface ActivityCreatePayload {
 export interface ActivityUpdatePayload {
   name?: string;
   date?: string;
+  activity_type?: 'run' | 'bike' | 'swim' | 'other';
   total_distance_km?: number;
 }
 

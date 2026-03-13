@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatDistance } from '../utils/formatDistance';
-import { StarIcon } from './icons';
+import { StarIcon, ChevronRightIcon } from './icons';
 import type { Gear } from '../types';
 
 type FilterType = 'all' | 'run' | 'ride' | 'swim' | 'other';
@@ -42,7 +42,9 @@ function filterTypeLabel(filterType: FilterType): string {
 interface ShoeListItemProps {
   gear: Gear;
   showActivityTypeBadge: boolean;
+  componentsCount?: number;
   onPress: () => void;
+  onPressComponents?: () => void;
   onSetDefault: () => void;
   onDelete: () => void;
   onRetire?: () => void;
@@ -51,7 +53,9 @@ interface ShoeListItemProps {
 export default function ShoeListItem({
   gear,
   showActivityTypeBadge,
+  componentsCount = 0,
   onPress,
+  onPressComponents,
   onSetDefault,
   onDelete,
   onRetire,
@@ -69,7 +73,7 @@ export default function ShoeListItem({
   const isRetired = gear.status === 'retired';
 
   return (
-    <TouchableOpacity
+    <View
       style={[
         styles.card,
         {
@@ -79,78 +83,93 @@ export default function ShoeListItem({
           opacity: isRetired ? 0.7 : 1,
         },
       ]}
-      onPress={onPress}
-      onLongPress={() => {
-        const options: Array<{ text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }> = [];
-        if (!gear.is_default && !isRetired) {
-          options.push({ text: 'Set as default', onPress: onSetDefault });
-        }
-        if (!isRetired && onRetire) {
-          options.push({ text: 'Retire', onPress: onRetire });
-        }
-        options.push({ text: 'Delete', style: 'destructive', onPress: onDelete });
-        options.push({ text: 'Cancel', style: 'cancel' });
-        Alert.alert(gear.nick || `${gear.brand} ${gear.model}`, undefined, options);
-      }}
-      activeOpacity={0.7}
     >
-      <View style={styles.row}>
-        <View style={styles.main}>
-          <View style={styles.header}>
-            <Text
-              style={[
-                styles.headerText,
-                {
-                  color: tokens.gearItemHeaderColor,
-                  fontSize: tokens.gearItemHeaderFontSize,
-                  fontWeight: tokens.gearItemHeaderFontWeight,
-                  fontFamily: tokens.gearItemHeaderFontFamily,
-                },
-              ]}
-              numberOfLines={1}
-            >
-              {gearName}
-            </Text>
-            {gear.is_default && (
-              <View style={[styles.defaultBadge, { backgroundColor: tokens.accent + '26' }]}>
-                <StarIcon size={12} color={tokens.gearItemDefaultBadgeColor} />
-                <Text style={[styles.defaultText, { color: tokens.gearItemDefaultBadgeColor, fontSize: tokens.gearItemDefaultBadgeFontSize }]}>DEFAULT</Text>
-              </View>
+      <TouchableOpacity
+        onPress={onPress}
+        onLongPress={() => {
+          const options: Array<{ text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }> = [];
+          if (!gear.is_default && !isRetired) {
+            options.push({ text: 'Set as default', onPress: onSetDefault });
+          }
+          if (!isRetired && onRetire) {
+            options.push({ text: 'Retire', onPress: onRetire });
+          }
+          options.push({ text: 'Delete', style: 'destructive', onPress: onDelete });
+          options.push({ text: 'Cancel', style: 'cancel' });
+          Alert.alert(gear.nick || `${gear.brand} ${gear.model}`, undefined, options);
+        }}
+        activeOpacity={0.7}
+      >
+        <View style={styles.row}>
+          <View style={styles.main}>
+            <View style={styles.header}>
+              <Text
+                style={[
+                  styles.headerText,
+                  {
+                    color: tokens.gearItemHeaderColor,
+                    fontSize: tokens.gearItemHeaderFontSize,
+                    fontWeight: tokens.gearItemHeaderFontWeight,
+                    fontFamily: tokens.gearItemHeaderFontFamily,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {gearName}
+              </Text>
+              {gear.is_default && (
+                <View style={[styles.defaultBadge, { backgroundColor: tokens.accent + '26' }]}>
+                  <StarIcon size={12} color={tokens.gearItemDefaultBadgeColor} />
+                  <Text style={[styles.defaultText, { color: tokens.gearItemDefaultBadgeColor, fontSize: tokens.gearItemDefaultBadgeFontSize }]}>DEFAULT</Text>
+                </View>
+              )}
+              {isRetired && (
+                <View style={[styles.retiredBadge, { backgroundColor: tokens.cardBorder }]}>
+                  <Text style={[styles.retiredText, { color: tokens.textSecondary }]}>RETIRED</Text>
+                </View>
+              )}
+            </View>
+            {subtitle && (
+              <Text
+                style={[
+                  styles.subtitle,
+                  { color: tokens.gearItemSubtitleColor, fontSize: tokens.gearItemSubtitleFontSize },
+                ]}
+                numberOfLines={1}
+              >
+                {subtitle}
+              </Text>
             )}
-            {isRetired && (
-              <View style={[styles.retiredBadge, { backgroundColor: tokens.cardBorder }]}>
-                <Text style={[styles.retiredText, { color: tokens.textSecondary }]}>RETIRED</Text>
-              </View>
-            )}
+            <Text style={[styles.mileage, { color: tokens.gearItemMileageColor }]}>{mileage}</Text>
           </View>
-          {subtitle && (
-            <Text
-              style={[
-                styles.subtitle,
-                { color: tokens.gearItemSubtitleColor, fontSize: tokens.gearItemSubtitleFontSize },
-              ]}
-              numberOfLines={1}
-            >
-              {subtitle}
-            </Text>
+          {showActivityTypeBadge && (
+            <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
+              <Text style={[styles.typeBadgeText, { color: badgeStyle.color, fontSize: tokens.badgeFontSize, fontWeight: tokens.badgeFontWeight }]}>
+                {filterTypeLabel(filterType)}
+              </Text>
+            </View>
           )}
-          <Text style={[styles.mileage, { color: tokens.gearItemMileageColor }]}>{mileage}</Text>
         </View>
-        {showActivityTypeBadge && (
-          <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
-            <Text style={[styles.typeBadgeText, { color: badgeStyle.color, fontSize: tokens.badgeFontSize, fontWeight: tokens.badgeFontWeight }]}>
-              {filterTypeLabel(filterType)}
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {componentsCount > 0 && onPressComponents && (
+        <TouchableOpacity
+          style={[styles.componentsSection, { borderTopColor: tokens.cardBorder }]}
+          onPress={onPressComponents}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.componentsText, { color: tokens.accent }]}>
+            {componentsCount === 1 ? '1 component' : `${componentsCount} components`}
+          </Text>
+          <ChevronRightIcon size={16} color={tokens.accent} />
+        </TouchableOpacity>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    padding: 16,
+  card: { 
+    paddingVertical: 16,
     marginHorizontal: 16,
     marginVertical: 6,
     borderWidth: 1,
@@ -159,6 +178,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    paddingHorizontal: 16,
   },
   main: {
     flex: 1,
@@ -197,6 +217,18 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mileage: {
+    fontSize: 12,
+  },
+  componentsSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    marginTop: 12,
+    borderTopWidth: 1,
+  },
+  componentsText: {
     fontSize: 12,
   },
   typeBadge: {

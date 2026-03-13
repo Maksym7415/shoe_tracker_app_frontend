@@ -19,7 +19,7 @@ import { gearApi } from '../api/gear';
 import type { Activity, Gear } from '../types';
 import ActivityListItem from '../components/ActivityListItem';
 
-type Props = NativeStackScreenProps<MainStackParamList, 'Activities'>;
+type Props = NativeStackScreenProps<MainStackParamList, 'Activities/List'>;
 
 function getPrimaryGear(
   activity: Activity,
@@ -119,7 +119,7 @@ export default function ActivitiesScreen({ navigation }: Props) {
           activity={item}
           activityType={activityType}
           primaryGearName={primary?.name}
-          onPress={() => navigation.navigate('Activities/Edit', { id: item.id })}
+          onPress={() => navigation.navigate('Activities/Detail', { id: item.id })}
           onDelete={() => handleDelete(item)}
         />
       );

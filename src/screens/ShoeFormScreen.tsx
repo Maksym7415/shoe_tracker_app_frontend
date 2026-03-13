@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -16,8 +16,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
-import { ChevronDownIcon } from '../components/icons';
+import { ChevronDownIcon, TrashIcon, WrenchIcon, PlusIcon } from '../components/icons';
 import { gearApi } from '../api/gear';
+import type { Gear, Service } from '../types';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Add' | 'Shoes/Edit'>;
 
@@ -37,6 +38,14 @@ function mapActivityTypeFromApi(apiValue: string): string {
   return 'run';
 }
 
+function mapActivityTypeToApi(uiValue: string): string {
+  if (uiValue === 'run') return 'run';
+  if (uiValue === 'ride') return 'bike';
+  if (uiValue === 'swim') return 'swim';
+  if (uiValue === 'walk') return 'other';
+  return 'run';
+}
+
 const INPUT_HEIGHT = 40;
 
 export default function ShoeFormScreen({ route, navigation }: Props) {
@@ -50,10 +59,14 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
   const [nick, setNick] = useState('');
   const [maxValue, setMaxValue] = useState('');
   const [valueCovered, setValueCovered] = useState('');
+  const [parentGearId, setParentGearId] = useState<number | null>(null);
+  const [gear, setGear] = useState<(Gear & { services?: Service[]; installations?: { parent_gear_id: number }[] }) | null>(null);
+  const [gearList, setGearList] = useState<Gear[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [linkToGearDropdownVisible, setLinkToGearDropdownVisible] = useState(false);
 
   const parseNum = (s: string): number | null => {
     const t = s.trim();
@@ -73,6 +86,8 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
         setNick('');
         setMaxValue('');
         setValueCovered('');
+        setParentGearId(null);
+        setGear(null);
         setError(null);
         setLoading(false);
         return;
@@ -91,6 +106,9 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           setNick(g.nick ?? '');
           setMaxValue(g.max_value != null ? Number(g.max_value).toFixed(2) : '');
           setValueCovered(g.value_covered != null ? Number(g.value_covered).toFixed(2) : '');
+          setGear(g);
+          const parentId = g.installations?.find((i) => i.removed_at == null)?.parent_gear_id ?? null;
+          setParentGearId(parentId ?? null);
         })
         .catch((err: unknown) => {
           if (cancelled) return;
@@ -109,58 +127,18 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
     }, [isEdit, gearId])
   );
 
-  const handleSubmit = useCallback(async () => {
-    const b = brand.trim();
-    const m = model.trim();
-    if (!b || !m) {
-      setError('Brand and model are required');
-      return;
-    }
-    setError(null);
-    setSubmitting(true);
-    try {
-      if (isEdit && gearId != null) {
-        await gearApi.update(gearId, {
-          brand: b,
-          model: m,
-          activity_type: activityType,
-          nick: nick.trim() || undefined,
-          max_value: parseNum(maxValue) ?? undefined,
-          value_covered: parseNum(valueCovered) ?? undefined,
-        });
-      } else {
-        await gearApi.create({
-          activity_type: activityType,
-          gear_type: 'shoe',
-          metric_type: 'distance',
-          brand: b,
-          model: m,
-          nick: nick.trim() || undefined,
-          max_value: parseNum(maxValue) ?? 800,
-          value_covered: parseNum(valueCovered) ?? 0,
-        });
-      }
-      navigation.goBack();
-    } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : null;
-      setError(msg ?? 'Something went wrong');
-    } finally {
-      setSubmitting(false);
-    }
-  }, [
-    brand,
-    model,
-    activityType,
-    nick,
-    maxValue,
-    valueCovered,
-    isEdit,
-    gearId,
-    navigation,
-  ]);
+  useFocusEffect(
+    useCallback(() => {
+      const apiActivityType = mapActivityTypeToApi(activityType);
+      gearApi
+        .list({ activity_type: apiActivityType })
+        .then((res) => {
+          const list = res.gear.filter((g) => g.gear_type !== 'component' && g.id !== gearId);
+          setGearList(list);
+        })
+        .catch(() => setGearList([]));
+    }, [activityType, gearId])
+  );
 
   const handleDelete = useCallback(() => {
     if (!isEdit || gearId == null) return;
@@ -191,6 +169,87 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
       ]
     );
   }, [isEdit, gearId, brand, navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: isEdit && gearId != null
+        ? () => (
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={{ padding: 8 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <TrashIcon size={22} color={tokens.textSecondary} />
+            </TouchableOpacity>
+          )
+        : undefined,
+    });
+  }, [navigation, isEdit, gearId, tokens.textSecondary, handleDelete]);
+
+  const parentGearLabel = useMemo(() => {
+    if (parentGearId == null) return 'None';
+    const g = gearList.find((x) => x.id === parentGearId);
+    return g?.nick?.trim() || `${g?.brand ?? ''} ${g?.model ?? ''}`.trim() || 'None';
+  }, [parentGearId, gearList]);
+
+  const handleSubmit = useCallback(async () => {
+    const b = brand.trim();
+    const m = model.trim();
+    if (!b || !m) {
+      setError('Brand and model are required');
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    const apiActivityType = mapActivityTypeToApi(activityType);
+    const gearType = parentGearId != null ? 'component' : 'shoe';
+    try {
+      if (isEdit && gearId != null) {
+        await gearApi.update(gearId, {
+          brand: b,
+          model: m,
+          activity_type: apiActivityType,
+          gear_type: gearType,
+          nick: nick.trim() || undefined,
+          max_value: parseNum(maxValue) ?? undefined,
+          value_covered: parseNum(valueCovered) ?? undefined,
+          parent_gear_id: parentGearId,
+        });
+      } else {
+        await gearApi.create({
+          activity_type: apiActivityType,
+          gear_type: gearType,
+          metric_type: 'distance',
+          brand: b,
+          model: m,
+          nick: nick.trim() || undefined,
+          max_value: parseNum(maxValue) ?? 800,
+          value_covered: parseNum(valueCovered) ?? 0,
+          ...(parentGearId != null && { parent_gear_id: parentGearId }),
+        });
+      }
+      navigation.goBack();
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : null;
+      setError(msg ?? 'Something went wrong');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [
+    brand,
+    model,
+    activityType,
+    nick,
+    maxValue,
+    valueCovered,
+    parentGearId,
+    isEdit,
+    gearId,
+    navigation,
+  ]);
 
   if (loading) {
     return (
@@ -335,6 +394,145 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           editable={!submitting}
         />
 
+        <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>Link to Gear</Text>
+        <Text style={[styles.sectionSubtitle, { color: tokens.textSecondary }]}>
+          Assign this as a component of another gear
+        </Text>
+        <TouchableOpacity
+          style={[
+            styles.dropdownTrigger,
+            inputStyle,
+            {
+              borderWidth: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingHorizontal: 12,
+              opacity: activityType ? 1 : 0.6,
+            },
+          ]}
+          onPress={() => activityType && !submitting && setLinkToGearDropdownVisible(true)}
+          disabled={!activityType || submitting}
+        >
+          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>{parentGearLabel}</Text>
+          <ChevronDownIcon size={20} color={tokens.textSecondary} />
+        </TouchableOpacity>
+
+        <Modal
+          visible={linkToGearDropdownVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLinkToGearDropdownVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalOverlay}
+            activeOpacity={1}
+            onPress={() => setLinkToGearDropdownVisible(false)}
+          >
+            <View
+              style={[
+                styles.dropdownModal,
+                {
+                  backgroundColor: tokens.cardBackground,
+                  borderColor: tokens.cardBorder,
+                  borderRadius: tokens.cardBorderRadius,
+                },
+              ]}
+              onStartShouldSetResponder={() => true}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.dropdownOption,
+                  { borderBottomColor: tokens.cardBorder },
+                  parentGearId == null && { backgroundColor: tokens.accent + '22' },
+                ]}
+                onPress={() => {
+                  setParentGearId(null);
+                  setLinkToGearDropdownVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.dropdownOptionText,
+                    { color: tokens.pageTitleColor },
+                    parentGearId == null && { color: tokens.accent, fontWeight: '600' },
+                  ]}
+                >
+                  None
+                </Text>
+              </TouchableOpacity>
+              {gearList.map((g) => {
+                const label = g.nick?.trim() || `${g.brand} ${g.model}`.trim();
+                const isSelected = g.id === parentGearId;
+                return (
+                  <TouchableOpacity
+                    key={g.id}
+                    style={[
+                      styles.dropdownOption,
+                      { borderBottomColor: tokens.cardBorder },
+                      isSelected && { backgroundColor: tokens.accent + '22' },
+                    ]}
+                    onPress={() => {
+                      setParentGearId(g.id);
+                      setLinkToGearDropdownVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownOptionText,
+                        { color: tokens.pageTitleColor },
+                        isSelected && { color: tokens.accent, fontWeight: '600' },
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
+        {isEdit && gearId != null ? (
+          <>
+            <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor, marginTop: 24 }]}>
+              Services
+            </Text>
+            {(gear?.services ?? []).map((s) => (
+              <TouchableOpacity
+                key={s.id}
+                style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}
+                onPress={() =>
+                  navigation.navigate('Shoes/Service/Edit', { gearId, serviceId: s.id })
+                }
+                disabled={submitting}
+              >
+                <WrenchIcon size={20} color={tokens.textSecondary} />
+                <View style={styles.serviceRowContent}>
+                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>{s.name}</Text>
+                  <Text style={[styles.serviceDetail, { color: tokens.textSecondary }]}>
+                    Every {s.interval_value} {s.interval_unit}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[
+                styles.addServiceButton,
+                {
+                  backgroundColor: tokens.cardBackground,
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+              onPress={() => navigation.navigate('Shoes/Service/Add', { gearId })}
+              disabled={submitting}
+            >
+              <PlusIcon size={20} color={tokens.accent} />
+              <Text style={[styles.addServiceText, { color: tokens.accent }]}>Add Service</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+
         <TouchableOpacity
           style={[
             styles.submitButton,
@@ -350,16 +548,6 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
             <Text style={styles.submitButtonText}>Save</Text>
           )}
         </TouchableOpacity>
-
-        {isEdit && (
-          <TouchableOpacity
-            style={[styles.deleteButton, { backgroundColor: tokens.destructiveButtonBg }]}
-            onPress={handleDelete}
-            disabled={submitting}
-          >
-            <Text style={styles.deleteButtonText}>Delete Gear</Text>
-          </TouchableOpacity>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -419,6 +607,47 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     fontSize: 16,
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  serviceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  serviceRowContent: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  serviceDetail: {
+    fontSize: 13,
+  },
+  addServiceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  addServiceText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   submitButton: {
     borderRadius: 8,
     padding: 16,
@@ -429,17 +658,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   submitButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  deleteButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

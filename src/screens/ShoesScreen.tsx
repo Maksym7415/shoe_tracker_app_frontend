@@ -19,7 +19,7 @@ import { gearApi } from '../api/gear';
 import type { Gear } from '../types';
 import ShoeListItem from '../components/ShoeListItem';
 
-type Props = NativeStackScreenProps<MainStackParamList, 'Shoes'>;
+type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/List'>;
 
 type FilterValue = 'all' | 'run' | 'ride' | 'swim' | 'other';
 
@@ -42,6 +42,7 @@ const FILTERS: { value: FilterValue; label: string }[] = [
 export default function ShoesScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const [gear, setGear] = useState<Gear[]>([]);
+  const [componentsCountMap, setComponentsCountMap] = useState<Map<number, number>>(new Map());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,8 +51,25 @@ export default function ShoesScreen({ navigation }: Props) {
   const fetchGear = useCallback(async () => {
     try {
       setError(null);
-      const data = await gearApi.list({ gear_type: 'shoe' });
-      setGear(data.gear ?? []);
+      const [shoesRes, bikesRes] = await Promise.all([
+        gearApi.list({ gear_type: 'shoe' }),
+        gearApi.list({ gear_type: 'bike' }),
+      ]);
+      const allGear = [...(shoesRes.gear ?? []), ...(bikesRes.gear ?? [])];
+      setGear(allGear);
+
+      const parentGear = allGear.filter((g) => g.gear_type === 'shoe' || g.gear_type === 'bike');
+      const counts = await Promise.all(
+        parentGear.map(async (g) => {
+          try {
+            const res = await gearApi.getComponents(g.id);
+            return [g.id, (res.components ?? []).length] as const;
+          } catch {
+            return [g.id, 0] as const;
+          }
+        })
+      );
+      setComponentsCountMap(new Map(counts));
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -59,6 +77,7 @@ export default function ShoesScreen({ navigation }: Props) {
           : null;
       setError(msg ?? 'Failed to load gear');
       setGear([]);
+      setComponentsCountMap(new Map());
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,8 +105,7 @@ export default function ShoesScreen({ navigation }: Props) {
     async (item: Gear) => {
       try {
         await gearApi.setDefault(item.id);
-        const data = await gearApi.list({ gear_type: 'shoe' });
-        setGear(data.gear ?? []);
+        fetchGear();
       } catch (err: unknown) {
         const msg =
           err && typeof err === 'object' && 'response' in err
@@ -96,15 +114,14 @@ export default function ShoesScreen({ navigation }: Props) {
         Alert.alert('Error', msg ?? 'Failed to set default');
       }
     },
-    []
+    [fetchGear]
   );
 
   const handleRetire = useCallback(
     async (item: Gear) => {
       try {
         await gearApi.retire(item.id);
-        const data = await gearApi.list({ gear_type: 'shoe' });
-        setGear(data.gear ?? []);
+        fetchGear();
       } catch (err: unknown) {
         const msg =
           err && typeof err === 'object' && 'response' in err
@@ -113,7 +130,7 @@ export default function ShoesScreen({ navigation }: Props) {
         Alert.alert('Error', msg ?? 'Failed to retire gear');
       }
     },
-    []
+    [fetchGear]
   );
 
   const handleDelete = useCallback((item: Gear) => {
@@ -128,7 +145,7 @@ export default function ShoesScreen({ navigation }: Props) {
           onPress: async () => {
             try {
               await gearApi.remove(item.id);
-              setGear((prev) => prev.filter((g) => g.id !== item.id));
+              fetchGear();
             } catch (err: unknown) {
               const msg =
                 err && typeof err === 'object' && 'response' in err
@@ -140,20 +157,25 @@ export default function ShoesScreen({ navigation }: Props) {
         },
       ]
     );
-  }, []);
+  }, [fetchGear]);
 
   const renderItem = useCallback(
-    ({ item }: { item: Gear }) => (
-      <ShoeListItem
-        gear={item}
-        showActivityTypeBadge={filter === 'all'}
-        onPress={() => navigation.navigate('Shoes/Detail', { id: item.id })}
-        onSetDefault={() => handleSetDefault(item)}
-        onDelete={() => handleDelete(item)}
-        onRetire={() => handleRetire(item)}
-      />
-    ),
-    [navigation, handleSetDefault, handleDelete, handleRetire, filter]
+    ({ item }: { item: Gear }) => {
+      const count = componentsCountMap.get(item.id) ?? 0;
+      return (
+        <ShoeListItem
+          gear={item}
+          showActivityTypeBadge={filter === 'all'}
+          componentsCount={count}
+          onPress={() => navigation.navigate('Shoes/Detail', { id: item.id })}
+          onPressComponents={count > 0 ? () => navigation.navigate('Shoes/Components', { parentId: item.id }) : undefined}
+          onSetDefault={() => handleSetDefault(item)}
+          onDelete={() => handleDelete(item)}
+          onRetire={() => handleRetire(item)}
+        />
+      );
+    },
+    [navigation, componentsCountMap, handleSetDefault, handleDelete, handleRetire, filter]
   );
 
   if (loading && gear.length === 0) {
@@ -276,6 +298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 5,
     borderRadius: 100,
+    height: 28
   },
   filterChipText: {},
   centered: {
