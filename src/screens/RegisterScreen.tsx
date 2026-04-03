@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 
@@ -18,6 +19,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
 export default function RegisterScreen({ navigation }: Props) {
   const { register } = useAuth();
+  const { tokens } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,7 +52,7 @@ export default function RegisterScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tokens.pageBackground }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -59,15 +61,31 @@ export default function RegisterScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.form}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to track your shoes</Text>
+          <Text
+            style={[
+              styles.title,
+              { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily },
+            ]}
+          >
+            Create Account
+          </Text>
+          <Text style={[styles.subtitle, { color: tokens.textSecondary }]}>
+            Sign up to track your shoes
+          </Text>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={[styles.error, { color: tokens.error }]}>{error}</Text> : null}
 
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardBackground,
+                color: tokens.pageTitleColor,
+              },
+            ]}
             placeholder="Name"
-            placeholderTextColor="#999"
+            placeholderTextColor={tokens.profileSecondaryText}
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -75,9 +93,16 @@ export default function RegisterScreen({ navigation }: Props) {
             editable={!loading}
           />
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardBackground,
+                color: tokens.pageTitleColor,
+              },
+            ]}
             placeholder="Email"
-            placeholderTextColor="#999"
+            placeholderTextColor={tokens.profileSecondaryText}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -86,9 +111,16 @@ export default function RegisterScreen({ navigation }: Props) {
             editable={!loading}
           />
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardBackground,
+                color: tokens.pageTitleColor,
+              },
+            ]}
             placeholder="Password (min 6 characters)"
-            placeholderTextColor="#999"
+            placeholderTextColor={tokens.profileSecondaryText}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -97,14 +129,18 @@ export default function RegisterScreen({ navigation }: Props) {
           />
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[
+              styles.button,
+              { backgroundColor: tokens.accent },
+              loading && styles.buttonDisabled,
+            ]}
             onPress={handleRegister}
             disabled={loading}
           >
             {loading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={tokens.filterActiveColor} />
             ) : (
-              <Text style={styles.buttonText}>Sign Up</Text>
+              <Text style={[styles.buttonText, { color: tokens.filterActiveColor }]}>Sign Up</Text>
             )}
           </TouchableOpacity>
 
@@ -113,7 +149,9 @@ export default function RegisterScreen({ navigation }: Props) {
             onPress={() => navigation.goBack()}
             disabled={loading}
           >
-            <Text style={styles.linkText}>Already have an account? Sign in</Text>
+            <Text style={[styles.linkText, { color: tokens.accent }]}>
+              Already have an account? Sign in
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -124,7 +162,6 @@ export default function RegisterScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   scrollContent: {
     flexGrow: 1,
@@ -140,32 +177,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1a1a1a',
     marginBottom: 4,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 32,
     textAlign: 'center',
   },
   error: {
-    color: '#c00',
     marginBottom: 16,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     padding: 14,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#fafafa',
   },
   button: {
-    backgroundColor: '#2563eb',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -175,7 +206,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -184,7 +214,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#2563eb',
     fontSize: 14,
   },
 });

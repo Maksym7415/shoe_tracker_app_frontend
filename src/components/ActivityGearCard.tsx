@@ -20,7 +20,6 @@ export interface ActivityGearCardProps {
   gearSubtitle: string;
   value: number;
   componentsCount: number;
-  activeComponentIds: number[];
   excludedComponentIds: number[];
   editable: boolean;
   unit: 'km' | 'miles';
@@ -37,7 +36,6 @@ export default function ActivityGearCard({
   gearSubtitle,
   value,
   componentsCount,
-  activeComponentIds,
   excludedComponentIds,
   editable,
   unit,
@@ -54,7 +52,7 @@ export default function ActivityGearCard({
 
   const isComponentActive = useCallback(
     (id: number) => !excludedComponentIds.includes(id),
-    [excludedComponentIds]
+    [excludedComponentIds],
   );
 
   const fetchComponents = useCallback(async () => {
@@ -74,9 +72,8 @@ export default function ActivityGearCard({
     }
   }, [gearId, components.length]);
 
-  const valueStr = distanceEditable && distanceValue !== undefined
-    ? distanceValue
-    : formatDistance(value, unit);
+  const valueStr =
+    distanceEditable && distanceValue !== undefined ? distanceValue : formatDistance(value, unit);
 
   return (
     <View
@@ -91,13 +88,7 @@ export default function ActivityGearCard({
     >
       <View style={styles.mainRow}>
         <View style={styles.main}>
-          <Text
-            style={[
-              styles.gearName,
-              { color: tokens.gearItemHeaderColor },
-            ]}
-            numberOfLines={1}
-          >
+          <Text style={[styles.gearName, { color: tokens.gearItemHeaderColor }]} numberOfLines={1}>
             {gearName}
           </Text>
           {gearSubtitle ? (
@@ -126,9 +117,7 @@ export default function ActivityGearCard({
               placeholder="km"
             />
           ) : (
-            <Text style={[styles.value, { color: tokens.gearItemMileageColor }]}>
-              {valueStr}
-            </Text>
+            <Text style={[styles.value, { color: tokens.gearItemMileageColor }]}>{valueStr}</Text>
           )}
           {editable && onRemove && (
             <TouchableOpacity

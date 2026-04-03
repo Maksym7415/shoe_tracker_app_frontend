@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { formatDistance, convertKmToMiles } from '../utils/formatDistance';
+import { convertKmToMiles } from '../utils/formatDistance';
+import { getActivityBadge } from '../utils/activityBadge';
 import { PencilIcon, ShoesActivityIcon } from '../components/icons';
 import ActivityGearCard from '../components/ActivityGearCard';
 import { activitiesApi } from '../api/activities';
@@ -22,33 +23,23 @@ import type { Activity, ActivityGear, Gear } from '../types';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Activities/Detail'>;
 
-type FilterType = 'run' | 'ride' | 'swim' | 'other';
-
-function getBadgeStyle(type: FilterType, t: ReturnType<typeof useTheme>['tokens']) {
-  switch (type) {
-    case 'run':
-      return { color: t.badgeRunColor, backgroundColor: t.badgeRunBg };
-    case 'ride':
-      return { color: t.badgeRideColor, backgroundColor: t.badgeRideBg };
-    case 'swim':
-      return { color: t.badgeSwimColor, backgroundColor: t.badgeSwimBg };
-    default:
-      return { color: t.badgeOtherColor, backgroundColor: t.badgeOtherBg };
-  }
-}
-
-function normalizeActivityType(type: string): FilterType {
-  const t = type.toLowerCase();
-  if (t.includes('run') || t === 'running' || t === 'walking' || t === 'trail' || t === 'track') return 'run';
-  if (t.includes('ride') || t.includes('cycl') || t === 'bike') return 'ride';
-  if (t.includes('swim')) return 'swim';
-  return 'other';
-}
-
 function formatDateLong(dateStr: string): string {
   const d = new Date(dateStr);
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
   return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
@@ -110,7 +101,7 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
     navigation.setOptions({
       headerRight: () => (
         <TouchableOpacity
-          onPress={() => navigation.navigate('Activities/Edit', { id: activityId })}
+          onPress={() => navigation.navigate(MainRoutes.ActivitiesEdit, { id: activityId })}
           style={styles.headerButton}
         >
           <PencilIcon size={22} color={tokens.pageTitleColor} />
@@ -123,7 +114,7 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
     useCallback(() => {
       setLoading(true);
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const onRefresh = useCallback(() => {
@@ -133,7 +124,9 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
 
   const parentGearItems = useMemo(() => {
     if (!activity) return [];
-    const gearItems = (activity.gear ?? activity.shoes ?? []) as Array<ActivityGear | { shoe_id: number; distance_km?: number; value?: number }>;
+    const gearItems = (activity.gear ?? activity.shoes ?? []) as Array<
+      ActivityGear | { shoe_id: number; distance_km?: number; value?: number }
+    >;
     return gearItems.filter((g) => gearMap.has(getGearId(g)));
   }, [activity, gearMap]);
 
@@ -162,9 +155,7 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
 
   if (!activity) return null;
 
-  const filterType = normalizeActivityType(activity.activity_type ?? 'other');
-  const typeLabel = filterType === 'run' ? 'Run' : filterType === 'ride' ? 'Ride' : filterType === 'swim' ? 'Swim' : 'Other';
-  const badgeStyle = getBadgeStyle(filterType, tokens);
+  const badge = getActivityBadge(tokens, activity.activity_type);
 
   return (
     <ScrollView
@@ -183,8 +174,8 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
         >
           {activity.name}
         </Text>
-        <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
-          <Text style={[styles.typeBadgeText, { color: badgeStyle.color }]}>{typeLabel}</Text>
+        <View style={[styles.typeBadge, { backgroundColor: badge.backgroundColor }]}>
+          <Text style={[styles.typeBadgeText, { color: badge.textColor }]}>{badge.label}</Text>
         </View>
       </View>
 
@@ -194,12 +185,7 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
 
       <View style={styles.metricsRow}>
         <View style={styles.metricBlock}>
-          <Text
-            style={[
-              styles.metricValue,
-              { color: tokens.activityDistanceColor },
-            ]}
-          >
+          <Text style={[styles.metricValue, { color: tokens.activityDistanceColor }]}>
             {unit === 'miles'
               ? convertKmToMiles(activity.total_distance_km).toFixed(1)
               : Number(activity.total_distance_km).toFixed(1)}
@@ -210,19 +196,32 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
         </View>
         {activity.moving_time_seconds != null && activity.moving_time_seconds > 0 && (
           <View style={styles.metricBlock}>
-            <Text
-              style={[styles.metricValue, { color: tokens.activityDistanceColor }]}
-            >
+            <Text style={[styles.metricValue, { color: tokens.activityDistanceColor }]}>
               {formatDuration(activity.moving_time_seconds)}
             </Text>
             <Text style={[styles.metricLabel, { color: tokens.textSecondary }]}>duration</Text>
           </View>
         )}
-        <View style={[styles.sourceBadge, { backgroundColor: activity.source === 'strava' ? tokens.activityStravaColor + '26' : tokens.activityManualColor + '26' }]}>
+        <View
+          style={[
+            styles.sourceBadge,
+            {
+              backgroundColor:
+                activity.source === 'strava'
+                  ? tokens.activityStravaColor + '26'
+                  : tokens.activityManualColor + '26',
+            },
+          ]}
+        >
           <Text
             style={[
               styles.sourceBadgeText,
-              { color: activity.source === 'strava' ? tokens.activityStravaColor : tokens.activityManualColor },
+              {
+                color:
+                  activity.source === 'strava'
+                    ? tokens.activityStravaColor
+                    : tokens.activityManualColor,
+              },
             ]}
           >
             {activity.source === 'strava' ? 'Strava' : 'Manual'}
@@ -258,7 +257,6 @@ export default function ActivityDetailScreen({ route, navigation }: Props) {
                 gearSubtitle={gearSubtitle}
                 value={value}
                 componentsCount={componentsCount}
-                activeComponentIds={activeIds}
                 excludedComponentIds={excludedIds}
                 editable={false}
                 unit={unit}

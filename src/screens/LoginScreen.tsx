@@ -8,9 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
 
@@ -18,6 +18,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 export default function LoginScreen({ navigation }: Props) {
   const { login } = useAuth();
+  const { tokens } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,19 +46,33 @@ export default function LoginScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: tokens.pageBackground }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.form}>
-        <Text style={styles.title}>Shoe Tracker</Text>
-        <Text style={styles.subtitle}>Sign in to continue</Text>
+        <Text
+          style={[
+            styles.title,
+            { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily },
+          ]}
+        >
+          Shoe Tracker
+        </Text>
+        <Text style={[styles.subtitle, { color: tokens.textSecondary }]}>Sign in to continue</Text>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={[styles.error, { color: tokens.error }]}>{error}</Text> : null}
 
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: tokens.cardBorder,
+              backgroundColor: tokens.cardBackground,
+              color: tokens.pageTitleColor,
+            },
+          ]}
           placeholder="Email"
-          placeholderTextColor="#999"
+          placeholderTextColor={tokens.profileSecondaryText}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
@@ -66,9 +81,16 @@ export default function LoginScreen({ navigation }: Props) {
           editable={!loading}
         />
         <TextInput
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              borderColor: tokens.cardBorder,
+              backgroundColor: tokens.cardBackground,
+              color: tokens.pageTitleColor,
+            },
+          ]}
           placeholder="Password"
-          placeholderTextColor="#999"
+          placeholderTextColor={tokens.profileSecondaryText}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -77,14 +99,18 @@ export default function LoginScreen({ navigation }: Props) {
         />
 
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            { backgroundColor: tokens.accent },
+            loading && styles.buttonDisabled,
+          ]}
           onPress={handleLogin}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={tokens.filterActiveColor} />
           ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
+            <Text style={[styles.buttonText, { color: tokens.filterActiveColor }]}>Sign In</Text>
           )}
         </TouchableOpacity>
 
@@ -93,7 +119,9 @@ export default function LoginScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('Register')}
           disabled={loading}
         >
-          <Text style={styles.linkText}>Don't have an account? Sign up</Text>
+          <Text style={[styles.linkText, { color: tokens.accent }]}>
+            Don&apos;t have an account? Sign up
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -105,7 +133,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
   },
   form: {
     width: '100%',
@@ -115,32 +142,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#1a1a1a',
     marginBottom: 4,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 32,
     textAlign: 'center',
   },
   error: {
-    color: '#c00',
     marginBottom: 16,
     textAlign: 'center',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     padding: 14,
     fontSize: 16,
     marginBottom: 16,
-    backgroundColor: '#fafafa',
   },
   button: {
-    backgroundColor: '#2563eb',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -150,7 +171,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   buttonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -159,7 +179,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#2563eb',
     fontSize: 14,
   },
 });

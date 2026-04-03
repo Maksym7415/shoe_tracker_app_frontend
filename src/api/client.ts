@@ -35,6 +35,8 @@ const client: AxiosInstance = axios.create({
 
 const AUTH_ENDPOINTS_REQUIRING_TOKEN = ['/api/auth/me', '/api/auth/profile'];
 
+type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
+
 client.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await getStoredToken();
@@ -45,15 +47,14 @@ client.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 client.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.log('error', error);
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       console.warn('[API] 401 Unauthorized on', originalRequest.url, '- clearing token');
       originalRequest._retry = true;
       await setStoredToken(null);
@@ -61,7 +62,7 @@ client.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default client;

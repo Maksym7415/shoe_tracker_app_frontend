@@ -21,5 +21,23 @@ export type MainStackParamList = {
   'Profile/Edit': undefined;
 };
 
-export type AuthStackScreenProps<T extends keyof AuthStackParamList> =
-  NativeStackScreenProps<AuthStackParamList, T>;
+export const MainRoutes = {
+  ShoesList: 'Shoes/List',
+  ShoesAdd: 'Shoes/Add',
+  ShoesEdit: 'Shoes/Edit',
+  ShoesDetail: 'Shoes/Detail',
+  ShoesComponents: 'Shoes/Components',
+  ShoesServiceAdd: 'Shoes/Service/Add',
+  ShoesServiceEdit: 'Shoes/Service/Edit',
+  ActivitiesList: 'Activities/List',
+  ActivitiesAdd: 'Activities/Add',
+  ActivitiesDetail: 'Activities/Detail',
+  ActivitiesEdit: 'Activities/Edit',
+  ProfileView: 'Profile/View',
+  ProfileEdit: 'Profile/Edit',
+} as const;
+
+export type AuthStackScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<
+  AuthStackParamList,
+  T
+>;

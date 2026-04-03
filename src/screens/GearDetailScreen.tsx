@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Alert,
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -15,18 +14,21 @@ import type { MainStackParamList } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatDistance } from '../utils/formatDistance';
+import { getActivityBadge } from '../utils/activityBadge';
 import { gearApi } from '../api/gear';
 import type { Gear, Service } from '../types';
 import { StarIcon, ChevronRightIcon, ChevronDownIcon } from '../components/icons';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Detail'>;
 
-export default function GearDetailScreen({ route, navigation }: Props) {
+export default function GearDetailScreen({ route }: Props) {
   const { tokens } = useTheme();
   const { user } = useAuth();
   const unit = user?.preferred_distance_unit ?? 'km';
   const gearId = route.params.id;
-  const [gear, setGear] = useState<Gear & { installations?: unknown[]; services?: Service[] } | null>(null);
+  const [gear, setGear] = useState<
+    (Gear & { installations?: unknown[]; services?: Service[] }) | null
+  >(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function GearDetailScreen({ route, navigation }: Props) {
     useCallback(() => {
       setLoading(true);
       fetchGear();
-    }, [fetchGear])
+    }, [fetchGear]),
   );
 
   const onRefresh = useCallback(() => {
@@ -104,47 +106,7 @@ export default function GearDetailScreen({ route, navigation }: Props) {
   const maxMileage = isMaxSet ? formatDistance(rawMax, unit) : null;
   const isRetired = gear.status === 'retired';
   const services = gear.services ?? [];
-
-  type FilterType = 'all' | 'run' | 'ride' | 'swim' | 'other';
-
-  const normalizeActivityType = (type: string): FilterType => {
-    const t = type.toLowerCase();
-    if (t.includes('run') || t === 'running' || t === 'walking' || t === 'trail' || t === 'track') return 'run';
-    if (t.includes('ride') || t.includes('cycl') || t === 'bike') return 'ride';
-    if (t.includes('swim')) return 'swim';
-    return 'other';
-  };
-
-  const getBadgeStyle = (filterType: FilterType) => {
-    switch (filterType) {
-      case 'run':
-        return { color: tokens.badgeRunColor, backgroundColor: tokens.badgeRunBg };
-      case 'ride':
-        return { color: tokens.badgeRideColor, backgroundColor: tokens.badgeRideBg };
-      case 'swim':
-        return { color: tokens.badgeSwimColor, backgroundColor: tokens.badgeSwimBg };
-      default:
-        return { color: tokens.badgeOtherColor, backgroundColor: tokens.badgeOtherBg };
-    }
-  };
-
-  const filterTypeLabel = (filterType: FilterType): string => {
-    switch (filterType) {
-      case 'run':
-        return 'Run';
-      case 'ride':
-        return 'Ride';
-      case 'swim':
-        return 'Swim';
-      case 'other':
-        return 'Other';
-      default:
-        return filterType;
-    }
-  };
-
-  const filterType = normalizeActivityType(gear.activity_type);
-  const badgeStyle = getBadgeStyle(filterType);
+  const badge = getActivityBadge(tokens, gear.activity_type);
   const addedDate = new Date(gear.created_at);
   const addedLabel = `Added ${addedDate.toLocaleDateString()}`;
 
@@ -209,7 +171,10 @@ export default function GearDetailScreen({ route, navigation }: Props) {
               <Text
                 style={[
                   styles.subtitle,
-                  { color: tokens.gearItemSubtitleColor, fontSize: tokens.gearItemSubtitleFontSize },
+                  {
+                    color: tokens.gearItemSubtitleColor,
+                    fontSize: tokens.gearItemSubtitleFontSize,
+                  },
                 ]}
                 numberOfLines={1}
               >
@@ -218,18 +183,18 @@ export default function GearDetailScreen({ route, navigation }: Props) {
             )}
             <Text style={[styles.addedText, { color: tokens.textSecondary }]}>{addedLabel}</Text>
           </View>
-          <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
+          <View style={[styles.typeBadge, { backgroundColor: badge.backgroundColor }]}>
             <Text
               style={[
                 styles.typeBadgeText,
                 {
-                  color: badgeStyle.color,
+                  color: badge.textColor,
                   fontSize: tokens.badgeFontSize,
                   fontWeight: tokens.badgeFontWeight,
                 },
               ]}
             >
-              {filterTypeLabel(filterType)}
+              {badge.label}
             </Text>
           </View>
         </View>
@@ -238,12 +203,7 @@ export default function GearDetailScreen({ route, navigation }: Props) {
             {isMaxSet ? `${mileage} / ${maxMileage}` : mileage}
           </Text>
           {isMaxSet && (
-            <View
-              style={[
-                styles.progressTrack,
-                { backgroundColor: tokens.cardBorder },
-              ]}
-            >
+            <View style={[styles.progressTrack, { backgroundColor: tokens.cardBorder }]}>
               <View
                 style={[
                   styles.progressFill,
@@ -352,8 +312,13 @@ export default function GearDetailScreen({ route, navigation }: Props) {
           {servicesExpanded && (
             <View style={[styles.servicesList, { borderTopColor: tokens.cardBorder }]}>
               {services.map((s) => (
-                <View key={s.id} style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}>
-                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>{s.name}</Text>
+                <View
+                  key={s.id}
+                  style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}
+                >
+                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>
+                    {s.name}
+                  </Text>
                   <Text style={[styles.serviceDetail, { color: tokens.textSecondary }]}>
                     Every {s.interval_value} {s.interval_unit}
                     {s.last_performed_value != null

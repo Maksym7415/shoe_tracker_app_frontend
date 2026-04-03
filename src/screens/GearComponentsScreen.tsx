@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChevronLeftIcon } from '../components/icons';
 import { gearApi } from '../api/gear';
@@ -59,7 +59,7 @@ export default function GearComponentsScreen({ route, navigation }: Props) {
     useCallback(() => {
       setLoading(true);
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const onRefresh = useCallback(() => {
@@ -67,56 +67,58 @@ export default function GearComponentsScreen({ route, navigation }: Props) {
     fetchData();
   }, [fetchData]);
 
-  const handleSetDefault = useCallback(async (item: Gear) => {
-    try {
-      await gearApi.setDefault(item.id);
-      fetchData();
-    } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : null;
-      Alert.alert('Error', msg ?? 'Failed to set default');
-    }
-  }, [fetchData]);
+  const handleSetDefault = useCallback(
+    async (item: Gear) => {
+      try {
+        await gearApi.setDefault(item.id);
+        fetchData();
+      } catch (err: unknown) {
+        const msg =
+          err && typeof err === 'object' && 'response' in err
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : null;
+        Alert.alert('Error', msg ?? 'Failed to set default');
+      }
+    },
+    [fetchData],
+  );
 
-  const handleRetire = useCallback(async (item: Gear) => {
-    try {
-      await gearApi.retire(item.id);
-      fetchData();
-    } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-          : null;
-      Alert.alert('Error', msg ?? 'Failed to retire');
-    }
-  }, [fetchData]);
+  const handleRetire = useCallback(
+    async (item: Gear) => {
+      try {
+        await gearApi.retire(item.id);
+        fetchData();
+      } catch (err: unknown) {
+        const msg =
+          err && typeof err === 'object' && 'response' in err
+            ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+            : null;
+        Alert.alert('Error', msg ?? 'Failed to retire');
+      }
+    },
+    [fetchData],
+  );
 
   const handleDelete = useCallback((item: Gear) => {
-    Alert.alert(
-      'Delete gear',
-      `Delete ${item.brand} ${item.model}? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await gearApi.remove(item.id);
-              setComponents((prev) => prev.filter((g) => g.id !== item.id));
-            } catch (err: unknown) {
-              const msg =
-                err && typeof err === 'object' && 'response' in err
-                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-                  : null;
-              Alert.alert('Error', msg ?? 'Failed to delete');
-            }
-          },
+    Alert.alert('Delete gear', `Delete ${item.brand} ${item.model}? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await gearApi.remove(item.id);
+            setComponents((prev) => prev.filter((g) => g.id !== item.id));
+          } catch (err: unknown) {
+            const msg =
+              err && typeof err === 'object' && 'response' in err
+                ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+                : null;
+            Alert.alert('Error', msg ?? 'Failed to delete');
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, []);
 
   const renderItem = useCallback(
@@ -124,13 +126,13 @@ export default function GearComponentsScreen({ route, navigation }: Props) {
       <ShoeListItem
         gear={item}
         showActivityTypeBadge={true}
-        onPress={() => navigation.navigate('Shoes/Detail', { id: item.id })}
+        onPress={() => navigation.navigate(MainRoutes.ShoesDetail, { id: item.id })}
         onSetDefault={() => handleSetDefault(item)}
         onDelete={() => handleDelete(item)}
         onRetire={() => handleRetire(item)}
       />
     ),
-    [navigation, handleSetDefault, handleDelete, handleRetire]
+    [navigation, handleSetDefault, handleDelete, handleRetire],
   );
 
   if (loading && components.length === 0 && !parentName) {
@@ -158,15 +160,17 @@ export default function GearComponentsScreen({ route, navigation }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: tokens.pageBackground }]}>
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <ChevronLeftIcon size={20} color={tokens.accent} />
         <Text style={[styles.backButtonText, { color: tokens.accent }]}>Back to all gear</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.title, { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily }]}>
+      <Text
+        style={[
+          styles.title,
+          { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily },
+        ]}
+      >
         Components of {parentName}
       </Text>
 
@@ -183,11 +187,7 @@ export default function GearComponentsScreen({ route, navigation }: Props) {
           </View>
         }
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[tokens.accent]}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[tokens.accent]} />
         }
       />
     </View>
@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
   backButtonText: {
     fontSize: 16,
     fontWeight: '500',
-    
   },
   title: {
     fontSize: 20,

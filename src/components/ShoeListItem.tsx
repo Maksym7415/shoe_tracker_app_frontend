@@ -3,41 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { formatDistance } from '../utils/formatDistance';
+import { getActivityBadge } from '../utils/activityBadge';
 import { StarIcon, ChevronRightIcon } from './icons';
 import type { Gear } from '../types';
-
-type FilterType = 'all' | 'run' | 'ride' | 'swim' | 'other';
-
-function normalizeActivityType(type: string): FilterType {
-  const t = type.toLowerCase();
-  if (t.includes('run') || t === 'running' || t === 'walking' || t === 'trail' || t === 'track') return 'run';
-  if (t.includes('ride') || t.includes('cycl') || t === 'bike') return 'ride';
-  if (t.includes('swim')) return 'swim';
-  return 'other';
-}
-
-function getBadgeStyle(filterType: FilterType, t: ReturnType<typeof useTheme>['tokens']) {
-  switch (filterType) {
-    case 'run':
-      return { color: t.badgeRunColor, backgroundColor: t.badgeRunBg };
-    case 'ride':
-      return { color: t.badgeRideColor, backgroundColor: t.badgeRideBg };
-    case 'swim':
-      return { color: t.badgeSwimColor, backgroundColor: t.badgeSwimBg };
-    default:
-      return { color: t.badgeOtherColor, backgroundColor: t.badgeOtherBg };
-  }
-}
-
-function filterTypeLabel(filterType: FilterType): string {
-  switch (filterType) {
-    case 'run': return 'Run';
-    case 'ride': return 'Ride';
-    case 'swim': return 'Swim';
-    case 'other': return 'Other';
-    default: return filterType;
-  }
-}
 
 interface ShoeListItemProps {
   gear: Gear;
@@ -63,8 +31,7 @@ export default function ShoeListItem({
   const { tokens } = useTheme();
   const { user } = useAuth();
   const unit = user?.preferred_distance_unit ?? 'km';
-  const filterType = normalizeActivityType(gear.activity_type);
-  const badgeStyle = getBadgeStyle(filterType, tokens);
+  const badge = getActivityBadge(tokens, gear.activity_type);
 
   const gearName = gear.nick?.trim() ? gear.nick : `${gear.brand} ${gear.model}`;
   const subtitle = gear.nick?.trim() ? `${gear.brand} ${gear.model}` : null;
@@ -87,7 +54,11 @@ export default function ShoeListItem({
       <TouchableOpacity
         onPress={onPress}
         onLongPress={() => {
-          const options: Array<{ text: string; style?: 'cancel' | 'destructive'; onPress?: () => void }> = [];
+          const options: Array<{
+            text: string;
+            style?: 'cancel' | 'destructive';
+            onPress?: () => void;
+          }> = [];
           if (!gear.is_default && !isRetired) {
             options.push({ text: 'Set as default', onPress: onSetDefault });
           }
@@ -120,7 +91,17 @@ export default function ShoeListItem({
               {gear.is_default && (
                 <View style={[styles.defaultBadge, { backgroundColor: tokens.accent + '26' }]}>
                   <StarIcon size={12} color={tokens.gearItemDefaultBadgeColor} />
-                  <Text style={[styles.defaultText, { color: tokens.gearItemDefaultBadgeColor, fontSize: tokens.gearItemDefaultBadgeFontSize }]}>DEFAULT</Text>
+                  <Text
+                    style={[
+                      styles.defaultText,
+                      {
+                        color: tokens.gearItemDefaultBadgeColor,
+                        fontSize: tokens.gearItemDefaultBadgeFontSize,
+                      },
+                    ]}
+                  >
+                    DEFAULT
+                  </Text>
                 </View>
               )}
               {isRetired && (
@@ -133,7 +114,10 @@ export default function ShoeListItem({
               <Text
                 style={[
                   styles.subtitle,
-                  { color: tokens.gearItemSubtitleColor, fontSize: tokens.gearItemSubtitleFontSize },
+                  {
+                    color: tokens.gearItemSubtitleColor,
+                    fontSize: tokens.gearItemSubtitleFontSize,
+                  },
                 ]}
                 numberOfLines={1}
               >
@@ -143,9 +127,18 @@ export default function ShoeListItem({
             <Text style={[styles.mileage, { color: tokens.gearItemMileageColor }]}>{mileage}</Text>
           </View>
           {showActivityTypeBadge && (
-            <View style={[styles.typeBadge, { backgroundColor: badgeStyle.backgroundColor }]}>
-              <Text style={[styles.typeBadgeText, { color: badgeStyle.color, fontSize: tokens.badgeFontSize, fontWeight: tokens.badgeFontWeight }]}>
-                {filterTypeLabel(filterType)}
+            <View style={[styles.typeBadge, { backgroundColor: badge.backgroundColor }]}>
+              <Text
+                style={[
+                  styles.typeBadgeText,
+                  {
+                    color: badge.textColor,
+                    fontSize: tokens.badgeFontSize,
+                    fontWeight: tokens.badgeFontWeight,
+                  },
+                ]}
+              >
+                {badge.label}
               </Text>
             </View>
           )}
@@ -168,7 +161,7 @@ export default function ShoeListItem({
 }
 
 const styles = StyleSheet.create({
-  card: { 
+  card: {
     paddingVertical: 16,
     marginHorizontal: 16,
     marginVertical: 6,

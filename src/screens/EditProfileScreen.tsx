@@ -35,7 +35,7 @@ export default function EditProfileScreen({ navigation }: Props) {
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'miles'>(
-    (user?.preferred_distance_unit as 'km' | 'miles') ?? 'km'
+    (user?.preferred_distance_unit as 'km' | 'miles') ?? 'km',
   );
   const [unitPickerVisible, setUnitPickerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -183,7 +183,9 @@ export default function EditProfileScreen({ navigation }: Props) {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>Reset password</Text>
+          <Text style={[styles.sectionTitle, { color: tokens.pageTitleColor }]}>
+            Reset password
+          </Text>
           {resetSent ? (
             <Text style={[styles.helperText, { color: '#2bd4bd' }]}>
               Check your email for the reset link.
@@ -243,10 +245,7 @@ export default function EditProfileScreen({ navigation }: Props) {
               return (
                 <TouchableOpacity
                   key={opt.value}
-                  style={[
-                    styles.modalOption,
-                    selected && { backgroundColor: tokens.accent },
-                  ]}
+                  style={[styles.modalOption, selected && { backgroundColor: tokens.accent }]}
                   onPress={() => {
                     setDistanceUnit(opt.value);
                     setUnitPickerVisible(false);
@@ -372,4 +371,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

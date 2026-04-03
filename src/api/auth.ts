@@ -12,25 +12,22 @@ export interface RegisterResponse {
 }
 
 export const authApi = {
-  login: async (email: string, password: string) => {
-
-    const res = await client.post<LoginResponse>('/api/auth/login', { email, password })
-    console.log('res', res);
-    return res;
-  },
+  login: (email: string, password: string) =>
+    client.post<LoginResponse>('/api/auth/login', { email, password }).then((res) => res.data),
 
   register: (email: string, password: string, name: string) =>
-    client.post<RegisterResponse>('/api/auth/register', { email, password, name }),
+    client
+      .post<RegisterResponse>('/api/auth/register', { email, password, name })
+      .then((res) => res.data),
 
-  me: () => client.get<User>('/api/auth/me'),
+  me: () => client.get<User>('/api/auth/me').then((res) => res.data),
 
   updateProfile: (data: {
     name?: string;
     email?: string;
     avatar_url?: string;
     preferred_distance_unit?: 'km' | 'miles';
-  }) =>
-    client.put<User>('/api/auth/profile', data),
+  }) => client.put<User>('/api/auth/profile', data).then((res) => res.data),
 
   updateProfileWithAvatar: (name: string, avatarUri: string, avatarType: string = 'image/jpeg') => {
     const formData = new FormData();
@@ -40,12 +37,16 @@ export const authApi = {
       type: avatarType,
       name: 'avatar.jpg',
     } as unknown as Blob);
-    return client.put<User>('/api/auth/profile', formData);
+    return client.put<User>('/api/auth/profile', formData).then((res) => res.data);
   },
 
   forgotPassword: (email: string) =>
-    client.post('/api/auth/forgot-password', { email }),
+    client
+      .post<{ success: boolean }>('/api/auth/forgot-password', { email })
+      .then((res) => res.data),
 
   resetPassword: (token: string, password: string) =>
-    client.post('/api/auth/reset-password', { token, password }),
+    client
+      .post<{ success: boolean }>('/api/auth/reset-password', { token, password })
+      .then((res) => res.data),
 };

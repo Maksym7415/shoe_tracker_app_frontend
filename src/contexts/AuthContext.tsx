@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authApi } from '../api/auth';
-import {
-  getStoredToken,
-  setStoredToken,
-  setOnUnauthorized,
-} from '../api/client';
+import { getStoredToken, setStoredToken, setOnUnauthorized } from '../api/client';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -40,8 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      const { data } = await authApi.me();
-      setUser(data);
+      const me = await authApi.me();
+      setUser(me);
     } catch {
       await setStoredToken(null);
       setUser(null);
@@ -55,13 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshUser]);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { data } = await authApi.login(email, password);
+    const data = await authApi.login(email, password);
     await setStoredToken(data.token);
     setUser(data.user);
   }, []);
 
   const register = useCallback(async (email: string, password: string, name: string) => {
-    const { data } = await authApi.register(email, password, name);
+    const data = await authApi.register(email, password, name);
     await setStoredToken(data.token);
     setUser(data.user);
   }, []);

@@ -16,7 +16,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChevronDownIcon, CalendarIcon, TrashIcon } from '../components/icons';
@@ -124,7 +124,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
           setActivityType(mapActivityTypeFromApi(a.activity_type ?? 'run'));
           setTotalDistanceKm(Number(a.total_distance_km).toFixed(2));
           setGearList(allGear);
-          const gearItems = (a.gear ?? a.shoes ?? []) as Array<ActivityGear | { shoe_id: number; distance_km?: number; value?: number }>;
+          const gearItems = (a.gear ?? a.shoes ?? []) as Array<
+            ActivityGear | { shoe_id: number; distance_km?: number; value?: number }
+          >;
           const rows: GearRow[] = gearItems
             .filter((g) => gearMap.has(getGearId(g)))
             .map((g) => {
@@ -149,7 +151,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
       return () => {
         cancelled = true;
       };
-    }, [activityId])
+    }, [activityId]),
   );
 
   const onDateChange = useCallback((_event: unknown, selectedDate?: Date) => {
@@ -198,7 +200,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   }, []);
 
   const selectedGearIds = new Set(
-    gearRows.map((r) => r.gearId).filter((id): id is number => id != null)
+    gearRows.map((r) => r.gearId).filter((id): id is number => id != null),
   );
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
@@ -207,12 +209,12 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow, index: number): string => {
+    (row: GearRow): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
     },
-    [gearRows.length, totalDistance]
+    [gearRows.length, totalDistance],
   );
 
   const getRowDistanceEditable = useCallback(
@@ -221,7 +223,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
       if (row?.gearId == null) return false;
       return gearRows.length > 1;
     },
-    [gearRows]
+    [gearRows],
   );
 
   const gearDistancesSum = gearRows.reduce((sum, row) => {
@@ -232,8 +234,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
 
   const sumValid =
     gearRows.length === 0 ||
-    (gearRows.every((r) => r.gearId != null) &&
-      Math.abs(gearDistancesSum - totalDistance) < 0.001);
+    (gearRows.every((r) => r.gearId != null) && Math.abs(gearDistancesSum - totalDistance) < 0.001);
 
   const canSave =
     name.trim().length > 0 &&
@@ -271,7 +272,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
       } else {
         await activitiesApi.assignGear(activityId, []);
       }
-      navigation.navigate('Activities/Detail', { id: activityId });
+      navigation.navigate(MainRoutes.ActivitiesDetail, { id: activityId });
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -281,44 +282,31 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [
-    activityId,
-    name,
-    date,
-    activityType,
-    totalDistance,
-    gearRows,
-    sumValid,
-    navigation,
-  ]);
+  }, [activityId, name, date, activityType, totalDistance, gearRows, sumValid, navigation]);
 
   const handleDelete = useCallback(() => {
-    Alert.alert(
-      'Delete activity',
-      'Delete this activity? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setSubmitting(true);
-              await activitiesApi.remove(activityId);
-              navigation.navigate('Activities/List');
-            } catch (err: unknown) {
-              const msg =
-                err && typeof err === 'object' && 'response' in err
-                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-                  : null;
-              setError(msg ?? 'Failed to delete activity');
-            } finally {
-              setSubmitting(false);
-            }
-          },
+    Alert.alert('Delete activity', 'Delete this activity? This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setSubmitting(true);
+            await activitiesApi.remove(activityId);
+            navigation.navigate(MainRoutes.ActivitiesList);
+          } catch (err: unknown) {
+            const msg =
+              err && typeof err === 'object' && 'response' in err
+                ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+                : null;
+            setError(msg ?? 'Failed to delete activity');
+          } finally {
+            setSubmitting(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [activityId, navigation]);
 
   useLayoutEffect(() => {
@@ -376,9 +364,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {error ? (
-          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
-        ) : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text> : null}
 
         <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Name *</Text>
         <TextInput
@@ -420,10 +406,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
           />
         )}
         {Platform.OS === 'ios' && showDatePicker && (
-          <TouchableOpacity
-            style={styles.datePickerDone}
-            onPress={() => setShowDatePicker(false)}
-          >
+          <TouchableOpacity style={styles.datePickerDone} onPress={() => setShowDatePicker(false)}>
             <Text style={[styles.datePickerDoneText, { color: tokens.accent }]}>Done</Text>
           </TouchableOpacity>
         )}
@@ -479,19 +462,17 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                   key={opt.value}
                   style={[
                     styles.modalOption,
-                    { backgroundColor: opt.value === activityType ? tokens.accent + '26' : tokens.cardBorder },
+                    {
+                      backgroundColor:
+                        opt.value === activityType ? tokens.accent + '26' : tokens.cardBorder,
+                    },
                   ]}
                   onPress={() => {
                     setActivityType(opt.value);
                     setActivityTypeDropdownVisible(false);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      { color: tokens.pageTitleColor },
-                    ]}
-                  >
+                  <Text style={[styles.modalOptionText, { color: tokens.pageTitleColor }]}>
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -518,7 +499,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
         />
 
         <View style={styles.gearHeader}>
-          <Text style={[styles.label, { color: tokens.pageTitleColor, marginBottom: 0 }]}>Gear</Text>
+          <Text style={[styles.label, { color: tokens.pageTitleColor, marginBottom: 0 }]}>
+            Gear
+          </Text>
           <TouchableOpacity
             onPress={addGearRow}
             disabled={submitting || availableGear.length === 0}
@@ -551,7 +534,6 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                 const gearSubtitle = selectedGear.nick?.trim()
                   ? `${selectedGear.brand} ${selectedGear.model}`
                   : selectedGear.brand;
-                const activeIds: number[] = [];
                 return (
                   <View key={index} style={styles.gearCardWrapper}>
                     <ActivityGearCard
@@ -560,19 +542,20 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                       gearSubtitle={gearSubtitle}
                       value={value}
                       componentsCount={componentsCount}
-                      activeComponentIds={activeIds}
                       excludedComponentIds={row.excludedComponentIds}
                       editable={true}
                       unit={unit}
                       distanceEditable={distanceEditable}
                       distanceValue={distanceEditable ? distanceDisplay : undefined}
-                      onDistanceChange={distanceEditable ? (v) => setRowDistance(index, v) : undefined}
+                      onDistanceChange={
+                        distanceEditable ? (v) => setRowDistance(index, v) : undefined
+                      }
                       onToggleComponent={(compId, active) => {
                         setRowExcludedComponents(
                           index,
                           active
                             ? row.excludedComponentIds.filter((id) => id !== compId)
-                            : [...row.excludedComponentIds, compId]
+                            : [...row.excludedComponentIds, compId],
                         );
                       }}
                       onRemove={() => removeGearRow(index)}
@@ -675,13 +658,11 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =
-                  gearPickerRowIndex != null &&
-                  gearRows[gearPickerRowIndex]?.gearId === item.id;
+                  gearPickerRowIndex != null && gearRows[gearPickerRowIndex]?.gearId === item.id;
                 const isDisabled =
                   (selectedGearIds.has(item.id) &&
                     !(
-                      gearPickerRowIndex != null &&
-                      gearRows[gearPickerRowIndex]?.gearId === item.id
+                      gearPickerRowIndex != null && gearRows[gearPickerRowIndex]?.gearId === item.id
                     )) ||
                   item.status === 'retired';
                 return (
@@ -710,7 +691,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                     >
                       {gearLabel(item)}
                       {item.status === 'retired' ? ' (retired)' : ''}
-                      {isDisabled && !isSelected && item.status !== 'retired' ? ' (already selected)' : ''}
+                      {isDisabled && !isSelected && item.status !== 'retired'
+                        ? ' (already selected)'
+                        : ''}
                     </Text>
                   </TouchableOpacity>
                 );

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { PlusIcon } from '../components/icons';
 import { activitiesApi } from '../api/activities';
@@ -23,7 +23,7 @@ type Props = NativeStackScreenProps<MainStackParamList, 'Activities/List'>;
 
 function getPrimaryGear(
   activity: Activity,
-  gearMap: Map<number, Gear>
+  gearMap: Map<number, Gear>,
 ): { activityType: string; name: string } | null {
   const gearItems = activity.gear ?? activity.shoes;
   if (!gearItems || gearItems.length === 0) return null;
@@ -70,7 +70,7 @@ export default function ActivitiesScreen({ navigation }: Props) {
     useCallback(() => {
       setLoading(true);
       fetchData();
-    }, [fetchData])
+    }, [fetchData]),
   );
 
   const onRefresh = useCallback(() => {
@@ -85,29 +85,25 @@ export default function ActivitiesScreen({ navigation }: Props) {
   }, [gearList]);
 
   const handleDelete = useCallback((activity: Activity) => {
-    Alert.alert(
-      'Delete activity',
-      `Delete "${activity.name}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await activitiesApi.remove(activity.id);
-              setActivities((prev) => prev.filter((a) => a.id !== activity.id));
-            } catch (err: unknown) {
-              const msg =
-                err && typeof err === 'object' && 'response' in err
-                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-                  : null;
-              Alert.alert('Error', msg ?? 'Failed to delete activity');
-            }
-          },
+    Alert.alert('Delete activity', `Delete "${activity.name}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await activitiesApi.remove(activity.id);
+            setActivities((prev) => prev.filter((a) => a.id !== activity.id));
+          } catch (err: unknown) {
+            const msg =
+              err && typeof err === 'object' && 'response' in err
+                ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+                : null;
+            Alert.alert('Error', msg ?? 'Failed to delete activity');
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, []);
 
   const renderItem = useCallback(
@@ -119,19 +115,21 @@ export default function ActivitiesScreen({ navigation }: Props) {
           activity={item}
           activityType={activityType}
           primaryGearName={primary?.name}
-          onPress={() => navigation.navigate('Activities/Detail', { id: item.id })}
+          onPress={() => navigation.navigate(MainRoutes.ActivitiesDetail, { id: item.id })}
           onDelete={() => handleDelete(item)}
         />
       );
     },
-    [navigation, handleDelete, gearMap]
+    [navigation, handleDelete, gearMap],
   );
 
   if (loading && activities.length === 0) {
     return (
       <View style={[styles.centered, { backgroundColor: tokens.pageBackground }]}>
         <ActivityIndicator size="large" color={tokens.loadingIndicator} />
-        <Text style={[styles.loadingText, { color: tokens.textSecondary }]}>Loading activities…</Text>
+        <Text style={[styles.loadingText, { color: tokens.textSecondary }]}>
+          Loading activities…
+        </Text>
       </View>
     );
   }
@@ -154,12 +152,17 @@ export default function ActivitiesScreen({ navigation }: Props) {
             data={activities}
             keyExtractor={(item) => String(item.id)}
             renderItem={renderItem}
-            contentContainerStyle={
-              activities.length === 0 ? styles.emptyList : styles.listContent
-            }
+            contentContainerStyle={activities.length === 0 ? styles.emptyList : styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={[styles.emptyTitle, { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily }]}>No activities yet</Text>
+                <Text
+                  style={[
+                    styles.emptyTitle,
+                    { color: tokens.pageTitleColor, fontFamily: tokens.pageTitleFontFamily },
+                  ]}
+                >
+                  No activities yet
+                </Text>
                 <Text style={[styles.emptySubtitle, { color: tokens.textSecondary }]}>
                   Add your first activity to start tracking.
                 </Text>
@@ -183,7 +186,7 @@ export default function ActivitiesScreen({ navigation }: Props) {
                 borderRadius: tokens.fabSize / 2,
               },
             ]}
-            onPress={() => navigation.navigate('Activities/Add')}
+            onPress={() => navigation.navigate(MainRoutes.ActivitiesAdd)}
           >
             <PlusIcon size={24} color="#fff" />
           </TouchableOpacity>

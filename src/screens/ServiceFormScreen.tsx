@@ -81,7 +81,7 @@ export default function ServiceFormScreen({ route, navigation }: Props) {
             }
           },
         },
-      ]
+      ],
     );
   }, [isEdit, serviceId, gearId, name, navigation]);
 
@@ -124,7 +124,9 @@ export default function ServiceFormScreen({ route, navigation }: Props) {
             setIntervalValue(String(service.interval_value));
             setIntervalUnit(service.interval_unit || 'km');
             setEarlyWarningPercent(
-              service.early_warning_ratio != null ? Math.round(service.early_warning_ratio * 100) : 80
+              service.early_warning_ratio != null
+                ? Math.round(service.early_warning_ratio * 100)
+                : 80,
             );
           }
         })
@@ -142,7 +144,7 @@ export default function ServiceFormScreen({ route, navigation }: Props) {
       return () => {
         cancelled = true;
       };
-    }, [isEdit, gearId, serviceId])
+    }, [isEdit, gearId, serviceId]),
   );
 
   const handleSubmit = useCallback(async () => {
@@ -209,9 +211,7 @@ export default function ServiceFormScreen({ route, navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {error ? (
-          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
-        ) : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text> : null}
 
         <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Title / Name *</Text>
         <TextInput

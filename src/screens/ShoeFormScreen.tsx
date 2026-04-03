@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChevronDownIcon, TrashIcon, WrenchIcon, PlusIcon } from '../components/icons';
 import { gearApi } from '../api/gear';
@@ -60,7 +60,9 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
   const [maxValue, setMaxValue] = useState('');
   const [valueCovered, setValueCovered] = useState('');
   const [parentGearId, setParentGearId] = useState<number | null>(null);
-  const [gear, setGear] = useState<(Gear & { services?: Service[]; installations?: { parent_gear_id: number }[] }) | null>(null);
+  const [gear, setGear] = useState<
+    (Gear & { services?: Service[]; installations?: { parent_gear_id: number }[] }) | null
+  >(null);
   const [gearList, setGearList] = useState<Gear[]>([]);
   const [loading, setLoading] = useState(isEdit);
   const [submitting, setSubmitting] = useState(false);
@@ -107,7 +109,8 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           setMaxValue(g.max_value != null ? Number(g.max_value).toFixed(2) : '');
           setValueCovered(g.value_covered != null ? Number(g.value_covered).toFixed(2) : '');
           setGear(g);
-          const parentId = g.installations?.find((i) => i.removed_at == null)?.parent_gear_id ?? null;
+          const parentId =
+            g.installations?.find((i) => i.removed_at == null)?.parent_gear_id ?? null;
           setParentGearId(parentId ?? null);
         })
         .catch((err: unknown) => {
@@ -124,7 +127,7 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
       return () => {
         cancelled = true;
       };
-    }, [isEdit, gearId])
+    }, [isEdit, gearId]),
   );
 
   useFocusEffect(
@@ -137,52 +140,49 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           setGearList(list);
         })
         .catch(() => setGearList([]));
-    }, [activityType, gearId])
+    }, [activityType, gearId]),
   );
 
   const handleDelete = useCallback(() => {
     if (!isEdit || gearId == null) return;
-    Alert.alert(
-      'Delete gear',
-      `Delete ${brand.trim() || 'this gear'}? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            setSubmitting(true);
-            try {
-              await gearApi.remove(gearId);
-              navigation.goBack();
-            } catch (err: unknown) {
-              const msg =
-                err && typeof err === 'object' && 'response' in err
-                  ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
-                  : null;
-              setError(msg ?? 'Failed to delete gear');
-            } finally {
-              setSubmitting(false);
-            }
-          },
+    Alert.alert('Delete gear', `Delete ${brand.trim() || 'this gear'}? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          setSubmitting(true);
+          try {
+            await gearApi.remove(gearId);
+            navigation.goBack();
+          } catch (err: unknown) {
+            const msg =
+              err && typeof err === 'object' && 'response' in err
+                ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+                : null;
+            setError(msg ?? 'Failed to delete gear');
+          } finally {
+            setSubmitting(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [isEdit, gearId, brand, navigation]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: isEdit && gearId != null
-        ? () => (
-            <TouchableOpacity
-              onPress={handleDelete}
-              style={{ padding: 8 }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <TrashIcon size={22} color={tokens.textSecondary} />
-            </TouchableOpacity>
-          )
-        : undefined,
+      headerRight:
+        isEdit && gearId != null
+          ? () => (
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={{ padding: 8 }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <TrashIcon size={22} color={tokens.textSecondary} />
+              </TouchableOpacity>
+            )
+          : undefined,
     });
   }, [navigation, isEdit, gearId, tokens.textSecondary, handleDelete]);
 
@@ -278,9 +278,7 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {error ? (
-          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
-        ) : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text> : null}
 
         <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Brand *</Text>
         <TextInput
@@ -503,13 +501,15 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
                 key={s.id}
                 style={[styles.serviceRow, { borderBottomColor: tokens.cardBorder }]}
                 onPress={() =>
-                  navigation.navigate('Shoes/Service/Edit', { gearId, serviceId: s.id })
+                  navigation.navigate(MainRoutes.ShoesServiceEdit, { gearId, serviceId: s.id })
                 }
                 disabled={submitting}
               >
                 <WrenchIcon size={20} color={tokens.textSecondary} />
                 <View style={styles.serviceRowContent}>
-                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>{s.name}</Text>
+                  <Text style={[styles.serviceName, { color: tokens.pageTitleColor }]}>
+                    {s.name}
+                  </Text>
                   <Text style={[styles.serviceDetail, { color: tokens.textSecondary }]}>
                     Every {s.interval_value} {s.interval_unit}
                   </Text>
@@ -524,7 +524,7 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
                   borderColor: tokens.cardBorder,
                 },
               ]}
-              onPress={() => navigation.navigate('Shoes/Service/Add', { gearId })}
+              onPress={() => navigation.navigate(MainRoutes.ShoesServiceAdd, { gearId })}
               disabled={submitting}
             >
               <PlusIcon size={20} color={tokens.accent} />

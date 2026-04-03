@@ -8,7 +8,16 @@ interface GearIconProps {
 
 export default function GearIcon({ size = 24, color = 'currentColor' }: GearIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <Path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
       <Path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
       <Path d="M12 2v2" />

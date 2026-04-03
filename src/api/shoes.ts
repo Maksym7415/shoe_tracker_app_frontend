@@ -29,29 +29,19 @@ export interface ShoeUpdatePayload {
 }
 
 export const shoesApi = {
-  list: () =>
-    client.get<ShoesListResponse>('/api/shoes').then((res) => res.data),
+  list: () => client.get<ShoesListResponse>('/api/shoes').then((res) => res.data),
 
   create: (payload: ShoeCreatePayload) =>
-    client
-      .post<ShoeSingleResponse>('/api/shoes', payload)
-      .then((res) => res.data),
+    client.post<ShoeSingleResponse>('/api/shoes', payload).then((res) => res.data),
 
-  get: (id: number) =>
-    client
-      .get<ShoeSingleResponse>(`/api/shoes/${id}`)
-      .then((res) => res.data),
+  get: (id: number) => client.get<ShoeSingleResponse>(`/api/shoes/${id}`).then((res) => res.data),
 
   update: (id: number, payload: ShoeUpdatePayload) =>
-    client
-      .put<ShoeSingleResponse>(`/api/shoes/${id}`, payload)
-      .then((res) => res.data),
+    client.put<ShoeSingleResponse>(`/api/shoes/${id}`, payload).then((res) => res.data),
 
   remove: (id: number) =>
     client.delete<{ success: boolean }>(`/api/shoes/${id}`).then((res) => res.data),
 
   setDefault: (id: number) =>
-    client
-      .put<ShoeSingleResponse>(`/api/shoes/${id}/default`)
-      .then((res) => res.data),
+    client.put<ShoeSingleResponse>(`/api/shoes/${id}/default`).then((res) => res.data),
 };

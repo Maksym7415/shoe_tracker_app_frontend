@@ -19,9 +19,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
-      {isAuthenticated ? <MainTabs /> : <AuthStack />}
-    </NavigationContainer>
+    <NavigationContainer>{isAuthenticated ? <MainTabs /> : <AuthStack />}</NavigationContainer>
   );
 }
 

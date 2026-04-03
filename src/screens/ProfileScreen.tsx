@@ -3,7 +3,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Image,
@@ -32,7 +31,9 @@ export default function ProfileScreen() {
   const [stravaConnected, setStravaConnected] = useState<boolean | null>(null);
   const [totalGears, setTotalGears] = useState<number | null>(null);
   const [totalActivities, setTotalActivities] = useState<number | null>(null);
-  const [alerts, setAlerts] = useState<Array<{ gear_id: number; type: string; message: string }>>([]);
+  const [alerts, setAlerts] = useState<Array<{ gear_id: number; type: string; message: string }>>(
+    [],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -45,7 +46,7 @@ export default function ProfileScreen() {
             activitiesApi.list(),
             gearApi.getAlerts().catch(() => ({ success: false, alerts: [] })),
           ]);
-          setStravaConnected(stravaRes.data.connected);
+          setStravaConnected(stravaRes.connected);
           setTotalGears(gearRes.gear?.length ?? 0);
           setTotalActivities(activitiesRes.activities?.length ?? 0);
           setAlerts(alertsRes.alerts ?? []);
@@ -57,7 +58,7 @@ export default function ProfileScreen() {
         }
       };
       fetchData();
-    }, [refreshUser])
+    }, [refreshUser]),
   );
 
   const pickImage = async () => {
@@ -79,8 +80,11 @@ export default function ProfileScreen() {
       const mimeType = asset.mimeType ?? 'image/jpeg';
       await authApi.updateProfileWithAvatar(user?.name ?? '', asset.uri, mimeType);
       await refreshUser();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update avatar. The backend may not support avatar upload yet.');
+    } catch {
+      Alert.alert(
+        'Error',
+        'Failed to update avatar. The backend may not support avatar upload yet.',
+      );
     } finally {
       setLoading(false);
     }
@@ -104,8 +108,11 @@ export default function ProfileScreen() {
       const mimeType = asset.mimeType ?? 'image/jpeg';
       await authApi.updateProfileWithAvatar(user?.name ?? '', asset.uri, mimeType);
       await refreshUser();
-    } catch (err) {
-      Alert.alert('Error', 'Failed to update avatar. The backend may not support avatar upload yet.');
+    } catch {
+      Alert.alert(
+        'Error',
+        'Failed to update avatar. The backend may not support avatar upload yet.',
+      );
     } finally {
       setLoading(false);
     }
@@ -123,7 +130,7 @@ export default function ProfileScreen() {
     const redirectUri = Linking.createURL('strava/callback');
     setStravaLoading(true);
     try {
-      const { data } = await stravaApi.getConnectUrl(redirectUri);
+      const data = await stravaApi.getConnectUrl(redirectUri);
       const authorizeUrl = data.authorize_url ?? data.url;
       if (!authorizeUrl) {
         Alert.alert('Error', 'Invalid response from server.');
@@ -190,11 +197,20 @@ export default function ProfileScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <TouchableOpacity style={styles.avatarContainer} onPress={showImageOptions} disabled={loading}>
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={showImageOptions}
+          disabled={loading}
+        >
           {user.avatar_url ? (
             <Image source={{ uri: user.avatar_url }} style={styles.avatar} />
           ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: tokens.profileAvatarPlaceholderBg }]}>
+            <View
+              style={[
+                styles.avatarPlaceholder,
+                { backgroundColor: tokens.profileAvatarPlaceholderBg },
+              ]}
+            >
               <ProfileIcon size={48} color={tokens.textSecondary} />
             </View>
           )}
@@ -207,7 +223,16 @@ export default function ProfileScreen() {
         <Text style={[styles.nameText, { color: tokens.pageTitleColor }]}>{user.name}</Text>
         <Text style={[styles.email, { color: tokens.profileSecondaryText }]}>{user.email}</Text>
 
-        <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.cardBackground,
+              borderColor: tokens.cardBorder,
+              borderRadius: tokens.cardBorderRadius,
+            },
+          ]}
+        >
           <Text style={[styles.settingsTitle, { color: tokens.pageTitleColor }]}>Settings</Text>
           <View style={styles.settingsRow}>
             <Text style={[styles.settingsLabel, { color: tokens.profileSecondaryText }]}>
@@ -219,13 +244,24 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.cardBackground,
+              borderColor: tokens.cardBorder,
+              borderRadius: tokens.cardBorderRadius,
+            },
+          ]}
+        >
           <View style={styles.stravaRow}>
             <View style={styles.stravaLeft}>
               <StravaIcon size={24} color={tokens.textSecondary} />
               <View>
                 <Text style={[styles.stravaTitle, { color: tokens.pageTitleColor }]}>Strava</Text>
-                <Text style={[styles.stravaSubtitle, { color: tokens.profileSecondaryText }]}>Sync your activities</Text>
+                <Text style={[styles.stravaSubtitle, { color: tokens.profileSecondaryText }]}>
+                  Sync your activities
+                </Text>
               </View>
             </View>
             {stravaConnected ? (
@@ -261,37 +297,86 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
-          <Text style={[styles.quickStatsTitle, { color: tokens.pageTitleColor }]}>Quick Stats</Text>
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: tokens.cardBackground,
+              borderColor: tokens.cardBorder,
+              borderRadius: tokens.cardBorderRadius,
+            },
+          ]}
+        >
+          <Text style={[styles.quickStatsTitle, { color: tokens.pageTitleColor }]}>
+            Quick Stats
+          </Text>
           <View style={styles.quickStatsRow}>
             <View style={[styles.statBlock, { backgroundColor: tokens.cardBorder }]}>
               <Text style={[styles.statValue, { color: tokens.pageTitleColor }]}>
                 {totalGears != null ? totalGears : '–'}
               </Text>
-              <Text style={[styles.statLabel, { color: tokens.profileSecondaryText }]}>Total Gears</Text>
+              <Text style={[styles.statLabel, { color: tokens.profileSecondaryText }]}>
+                Total Gears
+              </Text>
             </View>
             <View style={[styles.statBlock, { backgroundColor: tokens.cardBorder }]}>
               <Text style={[styles.statValue, { color: tokens.pageTitleColor }]}>
                 {totalActivities != null ? totalActivities : '–'}
               </Text>
-              <Text style={[styles.statLabel, { color: tokens.profileSecondaryText }]}>Activities</Text>
+              <Text style={[styles.statLabel, { color: tokens.profileSecondaryText }]}>
+                Activities
+              </Text>
             </View>
           </View>
         </View>
 
         {alerts.length > 0 ? (
-          <View style={[styles.card, { backgroundColor: tokens.cardBackground, borderColor: tokens.cardBorder, borderRadius: tokens.cardBorderRadius }]}>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: tokens.cardBackground,
+                borderColor: tokens.cardBorder,
+                borderRadius: tokens.cardBorderRadius,
+              },
+            ]}
+          >
             <Text style={[styles.quickStatsTitle, { color: tokens.pageTitleColor }]}>Alerts</Text>
             {alerts.map((a, i) => (
-              <View key={i} style={[styles.alertRow, { backgroundColor: a.type === 'service_overdue' || a.type === 'max_value' ? '#fef2f2' : '#fffbeb', padding: 12, borderRadius: 8, marginBottom: 8 }]}>
-                <Text style={[styles.alertText, { color: tokens.pageTitleColor }]}>{a.message}</Text>
+              <View
+                key={i}
+                style={[
+                  styles.alertRow,
+                  {
+                    backgroundColor:
+                      a.type === 'service_overdue' || a.type === 'max_value'
+                        ? tokens.error + '26'
+                        : tokens.accent + '26',
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 8,
+                  },
+                ]}
+              >
+                <Text style={[styles.alertText, { color: tokens.pageTitleColor }]}>
+                  {a.message}
+                </Text>
               </View>
             ))}
           </View>
         ) : null}
 
-        <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
-          <Text style={styles.logoutButtonText}>Log out</Text>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.logoutButton,
+            { backgroundColor: tokens.destructiveButtonBg },
+          ]}
+          onPress={handleLogout}
+        >
+          <Text style={[styles.logoutButtonText, { color: tokens.filterActiveColor }]}>
+            Log out
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -451,10 +536,8 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 16,
-    backgroundColor: '#dc2626',
   },
   logoutButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

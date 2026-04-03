@@ -68,15 +68,12 @@ function buildQuery(params: GearListParams): string {
 
 export const gearApi = {
   list: (params: GearListParams = {}) =>
-    client
-      .get<GearListResponse>(`/api/gear${buildQuery(params)}`)
-      .then((res) => res.data),
+    client.get<GearListResponse>(`/api/gear${buildQuery(params)}`).then((res) => res.data),
 
   create: (payload: GearCreatePayload) =>
     client.post<GearSingleResponse>('/api/gear', payload).then((res) => res.data),
 
-  get: (id: number) =>
-    client.get<GearSingleResponse>(`/api/gear/${id}`).then((res) => res.data),
+  get: (id: number) => client.get<GearSingleResponse>(`/api/gear/${id}`).then((res) => res.data),
 
   getComponents: (parentId: number) =>
     client
@@ -106,7 +103,9 @@ export const gearApi = {
       .then((res) => res.data),
 
   listServices: (gearId: number) =>
-    client.get<{ success: boolean; services: Service[] }>(`/api/gear/${gearId}/services`).then((res) => res.data),
+    client
+      .get<{ success: boolean; services: Service[] }>(`/api/gear/${gearId}/services`)
+      .then((res) => res.data),
 
   createService: (gearId: number, payload: ServiceCreatePayload) =>
     client
@@ -115,10 +114,10 @@ export const gearApi = {
 
   updateService: (gearId: number, serviceId: number, payload: ServiceUpdatePayload) =>
     client
-      .put<{ success: boolean; service: Service }>(
-        `/api/gear/${gearId}/services/${serviceId}`,
-        payload
-      )
+      .put<{
+        success: boolean;
+        service: Service;
+      }>(`/api/gear/${gearId}/services/${serviceId}`, payload)
       .then((res) => res.data),
 
   removeService: (gearId: number, serviceId: number) =>
@@ -131,6 +130,5 @@ export const gearApi = {
       .post<{ success: boolean }>(`/api/gear/${gearId}/services/${serviceId}/logs`)
       .then((res) => res.data),
 
-  getAlerts: () =>
-    client.get<AlertsResponse>('/api/gear/alerts').then((res) => res.data),
+  getAlerts: () => client.get<AlertsResponse>('/api/gear/alerts').then((res) => res.data),
 };

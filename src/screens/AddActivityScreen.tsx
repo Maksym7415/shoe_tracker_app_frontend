@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { MainStackParamList } from '../navigation/types';
+import { MainRoutes, type MainStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { ChevronDownIcon, CalendarIcon, TrashIcon } from '../components/icons';
 import type { Gear } from '../types';
@@ -79,10 +79,7 @@ export default function AddActivityScreen({ navigation }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      gearApi.list({ gear_type: 'shoe' }),
-      gearApi.list({ gear_type: 'bike' }),
-    ])
+    Promise.all([gearApi.list({ gear_type: 'shoe' }), gearApi.list({ gear_type: 'bike' })])
       .then(([shoesRes, bikesRes]) => {
         if (cancelled) return;
         const all = [...(shoesRes.gear ?? []), ...(bikesRes.gear ?? [])];
@@ -134,7 +131,7 @@ export default function AddActivityScreen({ navigation }: Props) {
   }, []);
 
   const selectedGearIds = new Set(
-    gearRows.map((r) => r.gearId).filter((id): id is number => id != null)
+    gearRows.map((r) => r.gearId).filter((id): id is number => id != null),
   );
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
@@ -143,12 +140,12 @@ export default function AddActivityScreen({ navigation }: Props) {
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow, index: number): string => {
+    (row: GearRow): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
     },
-    [gearRows.length, totalDistance]
+    [gearRows.length, totalDistance],
   );
 
   const getRowDistanceEditable = useCallback(
@@ -157,7 +154,7 @@ export default function AddActivityScreen({ navigation }: Props) {
       if (row?.gearId == null) return false;
       return gearRows.length > 1;
     },
-    [gearRows]
+    [gearRows],
   );
 
   const gearDistancesSum = gearRows.reduce((sum, row) => {
@@ -168,8 +165,7 @@ export default function AddActivityScreen({ navigation }: Props) {
 
   const sumValid =
     gearRows.length === 0 ||
-    (gearRows.every((r) => r.gearId != null) &&
-      Math.abs(gearDistancesSum - totalDistance) < 0.001);
+    (gearRows.every((r) => r.gearId != null) && Math.abs(gearDistancesSum - totalDistance) < 0.001);
 
   const canSave =
     name.trim().length > 0 &&
@@ -209,7 +205,7 @@ export default function AddActivityScreen({ navigation }: Props) {
         await activitiesApi.assignGear(activityId, gearPayload);
       }
 
-      navigation.navigate('Activities/List');
+      navigation.navigate(MainRoutes.ActivitiesList);
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -219,16 +215,7 @@ export default function AddActivityScreen({ navigation }: Props) {
     } finally {
       setSubmitting(false);
     }
-  }, [
-    name,
-    date,
-    activityType,
-    totalDistanceKm,
-    totalDistance,
-    gearRows,
-    sumValid,
-    navigation,
-  ]);
+  }, [name, date, activityType, totalDistance, gearRows, sumValid, navigation]);
 
   const inputStyle = {
     height: INPUT_HEIGHT,
@@ -248,9 +235,7 @@ export default function AddActivityScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {error ? (
-          <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
-        ) : null}
+        {error ? <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text> : null}
 
         <Text style={[styles.label, { color: tokens.pageTitleColor }]}>Name *</Text>
         <TextInput
@@ -292,10 +277,7 @@ export default function AddActivityScreen({ navigation }: Props) {
           />
         )}
         {Platform.OS === 'ios' && showDatePicker && (
-          <TouchableOpacity
-            style={styles.datePickerDone}
-            onPress={() => setShowDatePicker(false)}
-          >
+          <TouchableOpacity style={styles.datePickerDone} onPress={() => setShowDatePicker(false)}>
             <Text style={[styles.datePickerDoneText, { color: tokens.accent }]}>Done</Text>
           </TouchableOpacity>
         )}
@@ -351,19 +333,17 @@ export default function AddActivityScreen({ navigation }: Props) {
                   key={opt.value}
                   style={[
                     styles.modalOption,
-                    { backgroundColor: opt.value === activityType ? tokens.accent + '26' : tokens.cardBorder },
+                    {
+                      backgroundColor:
+                        opt.value === activityType ? tokens.accent + '26' : tokens.cardBorder,
+                    },
                   ]}
                   onPress={() => {
                     setActivityType(opt.value);
                     setActivityTypeDropdownVisible(false);
                   }}
                 >
-                  <Text
-                    style={[
-                      styles.modalOptionText,
-                      { color: tokens.pageTitleColor },
-                    ]}
-                  >
+                  <Text style={[styles.modalOptionText, { color: tokens.pageTitleColor }]}>
                     {opt.label}
                   </Text>
                 </TouchableOpacity>
@@ -390,7 +370,9 @@ export default function AddActivityScreen({ navigation }: Props) {
         />
 
         <View style={styles.gearHeader}>
-          <Text style={[styles.label, { color: tokens.pageTitleColor, marginBottom: 0 }]}>Gear</Text>
+          <Text style={[styles.label, { color: tokens.pageTitleColor, marginBottom: 0 }]}>
+            Gear
+          </Text>
           <TouchableOpacity
             onPress={addGearRow}
             disabled={submitting || availableGear.length === 0}
@@ -419,7 +401,8 @@ export default function AddActivityScreen({ navigation }: Props) {
                       inputStyle,
                       {
                         borderWidth: 1,
-                        borderColor: isPickerActive || hasSelection ? tokens.accent : tokens.cardBorder,
+                        borderColor:
+                          isPickerActive || hasSelection ? tokens.accent : tokens.cardBorder,
                         flex: 1,
                         flexDirection: 'row',
                         alignItems: 'center',
@@ -522,14 +505,10 @@ export default function AddActivityScreen({ navigation }: Props) {
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =
-                  gearPickerRowIndex != null &&
-                  gearRows[gearPickerRowIndex]?.gearId === item.id;
+                  gearPickerRowIndex != null && gearRows[gearPickerRowIndex]?.gearId === item.id;
                 const isDisabled =
                   selectedGearIds.has(item.id) &&
-                  !(
-                    gearPickerRowIndex != null &&
-                    gearRows[gearPickerRowIndex]?.gearId === item.id
-                  );
+                  !(gearPickerRowIndex != null && gearRows[gearPickerRowIndex]?.gearId === item.id);
                 return (
                   <TouchableOpacity
                     style={[

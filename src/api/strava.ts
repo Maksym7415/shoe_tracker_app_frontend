@@ -13,10 +13,13 @@ export interface StravaStatus {
 
 export const stravaApi = {
   getConnectUrl: (redirectUri?: string) =>
-    client.get<StravaConnectResponse>(
-      '/api/strava/connect',
-      redirectUri ? { params: { redirect_uri: redirectUri } } : undefined
-    ),
-  getStatus: () => client.get<StravaStatus>('/api/strava/status'),
-  disconnect: () => client.post('/api/strava/disconnect'),
+    client
+      .get<StravaConnectResponse>(
+        '/api/strava/connect',
+        redirectUri ? { params: { redirect_uri: redirectUri } } : undefined,
+      )
+      .then((res) => res.data),
+  getStatus: () => client.get<StravaStatus>('/api/strava/status').then((res) => res.data),
+  disconnect: () =>
+    client.post<{ success: boolean }>('/api/strava/disconnect').then((res) => res.data),
 };

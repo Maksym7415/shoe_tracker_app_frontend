@@ -27,25 +27,16 @@ export interface ActivitiesListResponse {
 }
 
 export const activitiesApi = {
-  list: () =>
-    client
-      .get<ActivitiesListResponse>('/api/activities')
-      .then((res) => res.data),
+  list: () => client.get<ActivitiesListResponse>('/api/activities').then((res) => res.data),
 
   create: (payload: ActivityCreatePayload) =>
-    client
-      .post<ActivitySingleResponse>('/api/activities', payload)
-      .then((res) => res.data),
+    client.post<ActivitySingleResponse>('/api/activities', payload).then((res) => res.data),
 
   get: (id: number) =>
-    client
-      .get<ActivitySingleResponse>(`/api/activities/${id}`)
-      .then((res) => res.data),
+    client.get<ActivitySingleResponse>(`/api/activities/${id}`).then((res) => res.data),
 
   update: (id: number, payload: ActivityUpdatePayload) =>
-    client
-      .put<ActivitySingleResponse>(`/api/activities/${id}`, payload)
-      .then((res) => res.data),
+    client.put<ActivitySingleResponse>(`/api/activities/${id}`, payload).then((res) => res.data),
 
   assignShoes: (activityId: number, shoes: ActivityShoe[]) =>
     client
@@ -58,7 +49,5 @@ export const activitiesApi = {
       .then((res) => res.data),
 
   remove: (id: number) =>
-    client
-      .delete<{ success: boolean }>(`/api/activities/${id}`)
-      .then((res) => res.data),
+    client.delete<{ success: boolean }>(`/api/activities/${id}`).then((res) => res.data),
 };

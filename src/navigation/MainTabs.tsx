@@ -15,7 +15,7 @@ import ActivityDetailScreen from '../screens/ActivityDetailScreen';
 import ActivityEditScreen from '../screens/ActivityEditScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
-import type { MainStackParamList } from './types';
+import { MainRoutes, type MainStackParamList } from './types';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator<MainStackParamList>();
@@ -47,20 +47,28 @@ function ShoesStack() {
       }}
     >
       <Stack.Screen
-        name="Shoes/List"
+        name={MainRoutes.ShoesList}
         component={ShoesScreen as React.ComponentType}
         options={{ title: 'My Gear', headerShown: true }}
       />
-      <Stack.Screen name="Shoes/Add" component={ShoeFormScreen} options={{ title: 'Add Gear' }} />
-      <Stack.Screen name="Shoes/Edit" component={ShoeFormScreen} options={{ title: 'Edit Gear' }} />
       <Stack.Screen
-        name="Shoes/Detail"
+        name={MainRoutes.ShoesAdd}
+        component={ShoeFormScreen}
+        options={{ title: 'Add Gear' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ShoesEdit}
+        component={ShoeFormScreen}
+        options={{ title: 'Edit Gear' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ShoesDetail}
         component={GearDetailScreen}
         options={({ route, navigation }) => ({
           title: 'Gear',
           headerRight: () => (
             <Text
-              onPress={() => navigation.navigate('Shoes/Edit', { id: route.params.id })}
+              onPress={() => navigation.navigate(MainRoutes.ShoesEdit, { id: route.params.id })}
               style={{ paddingHorizontal: 8 }}
             >
               <PencilIcon size={20} color={tokens.accent} />
@@ -68,9 +76,21 @@ function ShoesStack() {
           ),
         })}
       />
-      <Stack.Screen name="Shoes/Components" component={GearComponentsScreen} options={{ title: 'My Gear' }} />
-      <Stack.Screen name="Shoes/Service/Add" component={ServiceFormScreen} options={{ title: 'Add Service' }} />
-      <Stack.Screen name="Shoes/Service/Edit" component={ServiceFormScreen} options={{ title: 'Edit Service' }} />
+      <Stack.Screen
+        name={MainRoutes.ShoesComponents}
+        component={GearComponentsScreen}
+        options={{ title: 'My Gear' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ShoesServiceAdd}
+        component={ServiceFormScreen}
+        options={{ title: 'Add Service' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ShoesServiceEdit}
+        component={ServiceFormScreen}
+        options={{ title: 'Edit Service' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -86,13 +106,25 @@ function ActivitiesStack() {
       }}
     >
       <Stack.Screen
-        name="Activities/List"
+        name={MainRoutes.ActivitiesList}
         component={ActivitiesScreen as React.ComponentType}
         options={{ title: 'Activities', headerShown: true }}
       />
-      <Stack.Screen name="Activities/Detail" component={ActivityDetailScreen} options={{ title: 'Activity' }} />
-      <Stack.Screen name="Activities/Add" component={AddActivityScreen} options={{ title: 'Add Activity' }} />
-      <Stack.Screen name="Activities/Edit" component={ActivityEditScreen} options={{ title: 'Edit Activity' }} />
+      <Stack.Screen
+        name={MainRoutes.ActivitiesDetail}
+        component={ActivityDetailScreen}
+        options={{ title: 'Activity' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ActivitiesAdd}
+        component={AddActivityScreen}
+        options={{ title: 'Add Activity' }}
+      />
+      <Stack.Screen
+        name={MainRoutes.ActivitiesEdit}
+        component={ActivityEditScreen}
+        options={{ title: 'Edit Activity' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -108,14 +140,14 @@ function ProfileStack() {
       }}
     >
       <Stack.Screen
-        name="Profile/View"
+        name={MainRoutes.ProfileView}
         component={ProfileScreen}
         options={({ navigation }) => ({
           title: 'Profile',
           headerShown: true,
           headerRight: () => (
             <Text
-              onPress={() => navigation.navigate('Profile/Edit')}
+              onPress={() => navigation.navigate(MainRoutes.ProfileEdit)}
               style={{ paddingHorizontal: 8 }}
             >
               <PencilIcon size={20} color={tokens.accent} />
@@ -124,7 +156,7 @@ function ProfileStack() {
         })}
       />
       <Stack.Screen
-        name="Profile/Edit"
+        name={MainRoutes.ProfileEdit}
         component={EditProfileScreen}
         options={{
           title: 'Edit Profile',
@@ -152,7 +184,7 @@ export default function MainTabs() {
         component={ShoesStack}
         listeners={({ navigation }) => ({
           tabPress: () => {
-            navigation.navigate('Shoes', { screen: 'Shoes/List' });
+            navigation.navigate('Shoes', { screen: MainRoutes.ShoesList });
           },
         })}
         options={{
@@ -165,7 +197,7 @@ export default function MainTabs() {
         component={ActivitiesStack}
         listeners={({ navigation }) => ({
           tabPress: () => {
-            navigation.navigate('Activities', { screen: 'Activities/List' });
+            navigation.navigate('Activities', { screen: MainRoutes.ActivitiesList });
           },
         })}
         options={{
@@ -178,7 +210,7 @@ export default function MainTabs() {
         component={ProfileStack}
         listeners={({ navigation }) => ({
           tabPress: () => {
-            navigation.navigate('Profile', { screen: 'Profile/View' });
+            navigation.navigate('Profile', { screen: MainRoutes.ProfileView });
           },
         })}
         options={{
