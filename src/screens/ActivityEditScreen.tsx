@@ -209,7 +209,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow): string => {
+    (row: GearRow,index:number): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
