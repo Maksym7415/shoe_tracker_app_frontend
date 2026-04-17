@@ -37,6 +37,7 @@ export interface GearUpdatePayload {
   max_value?: number | null;
   value_covered?: number | null;
   parent_gear_id?: number | null;
+  is_default?: boolean;
 }
 
 export interface ServiceCreatePayload {

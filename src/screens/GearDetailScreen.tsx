@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,7 @@ export default function GearDetailScreen({ route }: Props) {
   const [componentsExpanded, setComponentsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
   const [components, setComponents] = useState<Gear[]>([]);
+ 
 
   const fetchGear = useCallback(async () => {
     try {
@@ -72,6 +73,23 @@ export default function GearDetailScreen({ route }: Props) {
     fetchGear();
   }, [fetchGear]);
 
+const handleToggleDefault = useCallback(async () => {
+  if (!gear) return;
+
+  const newValue = !gear.is_default;
+
+  try {
+
+    setGear(prev => prev ? { ...prev, is_default: newValue } : prev);
+
+    gearApi.setDefault(gear.id)
+   
+  } catch (err) {
+
+    setGear(prev => prev ? { ...prev, is_default: !newValue } : prev);
+  }
+}, [gear, gearId, fetchGear]);
+
   if (loading && !gear) {
     return (
       <View style={[styles.centered, { backgroundColor: tokens.pageBackground }]}>
@@ -94,8 +112,7 @@ export default function GearDetailScreen({ route }: Props) {
       </View>
     );
   }
-
-  if (!gear) return null;
+    if (!gear) return null;
 
   const gearName = gear.nick?.trim() ? gear.nick : `${gear.brand} ${gear.model}`;
   const subtitle = gear.nick?.trim() ? `${gear.brand} ${gear.model}` : null;
@@ -109,6 +126,7 @@ export default function GearDetailScreen({ route }: Props) {
   const badge = getActivityBadge(tokens, gear.activity_type);
   const addedDate = new Date(gear.created_at);
   const addedLabel = `Added ${addedDate.toLocaleDateString()}`;
+
 
   return (
     <ScrollView
@@ -216,6 +234,39 @@ export default function GearDetailScreen({ route }: Props) {
             </View>
           )}
         </View>
+<TouchableOpacity
+ onPress={handleToggleDefault}
+  style={[
+    styles.defaultButton,
+    {
+      backgroundColor: gear.is_default ? 'transparent' : tokens.accent,
+      borderColor: tokens.accent,
+      borderWidth: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  ]}
+
+>
+  <View style={{ marginRight: 6 }}>
+    <StarIcon
+      size={16}
+      color={gear.is_default ? tokens.accent : '#fff'}
+    />
+  </View>
+
+  <Text
+    style={[
+      styles.defaultButtonText,
+      {
+        color: gear.is_default  ? tokens.accent : '#fff',
+      },
+    ]}
+  >
+    {gear.is_default  ? 'Remove default' : 'Set as default'}
+  </Text>
+</TouchableOpacity>
       </View>
 
       {components.length > 0 && (
@@ -336,6 +387,17 @@ export default function GearDetailScreen({ route }: Props) {
 }
 
 const styles = StyleSheet.create({
+  defaultButton: {
+  marginTop: 16,
+  paddingVertical: 12,
+  borderRadius: 8,
+  alignItems: 'center',
+},
+
+defaultButtonText: {
+  fontSize: 14,
+  fontWeight: '600',
+},
   container: {
     flex: 1,
   },

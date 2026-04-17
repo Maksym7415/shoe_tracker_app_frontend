@@ -39,11 +39,12 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 client.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+
     const token = await getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else if (config.url && AUTH_ENDPOINTS_REQUIRING_TOKEN.some((p) => config.url?.includes(p))) {
-      console.warn('[API] No token in storage for auth request:', config.url);
+     
     }
     return config;
   },
@@ -55,7 +56,6 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      console.warn('[API] 401 Unauthorized on', originalRequest.url, '- clearing token');
       originalRequest._retry = true;
       await setStoredToken(null);
       onUnauthorized?.();

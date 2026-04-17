@@ -39,11 +39,12 @@ export default function ShoesScreen({ navigation }: Props) {
   const { gear, componentsCountMap, loading, refreshing, error, load, refresh, refetch } =
     useGearList();
 
+
   useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load]),
-  );
+  useCallback(() => {
+    refetch(); 
+  }, [refetch]),
+);
 
   const filteredGear = useMemo(() => {
     if (filter === 'all') return gear;
@@ -54,6 +55,7 @@ export default function ShoesScreen({ navigation }: Props) {
     async (item: Gear) => {
       try {
         await gearApi.setDefault(item.id);
+  
         refetch();
       } catch (err: unknown) {
         const msg =
@@ -66,10 +68,12 @@ export default function ShoesScreen({ navigation }: Props) {
     [refetch],
   );
 
+
   const handleRetire = useCallback(
     async (item: Gear) => {
       try {
         await gearApi.retire(item.id);
+
         refetch();
       } catch (err: unknown) {
         const msg =
@@ -122,6 +126,7 @@ export default function ShoesScreen({ navigation }: Props) {
               : undefined
           }
           onSetDefault={() => handleSetDefault(item)}
+
           onDelete={() => handleDelete(item)}
           onRetire={() => handleRetire(item)}
         />
@@ -148,7 +153,7 @@ export default function ShoesScreen({ navigation }: Props) {
           <Text style={[styles.errorText, { color: tokens.error }]}>{error}</Text>
           <TouchableOpacity
             style={[styles.retryButton, { backgroundColor: tokens.accent }]}
-            onPress={() => fetchGear()}
+            onPress={() => refetch()}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
