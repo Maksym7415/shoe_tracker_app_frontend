@@ -23,7 +23,7 @@ import { useGearList } from '../hooks/useGearList';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Detail'>;
 
-export default function GearDetailScreen({ route,navigation }: Props) {
+export default function GearDetailScreen({ route}: Props) {
   const { tokens } = useTheme();
   const { user } = useAuth();
   const unit = user?.preferred_distance_unit ?? 'km';
