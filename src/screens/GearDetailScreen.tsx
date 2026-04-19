@@ -18,10 +18,12 @@ import { getActivityBadge } from '../utils/activityBadge';
 import { gearApi } from '../api/gear';
 import type { Gear, Service } from '../types';
 import { StarIcon, ChevronRightIcon, ChevronDownIcon } from '../components/icons';
+import { useGearList } from '../hooks/useGearList';
+
 
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Detail'>;
 
-export default function GearDetailScreen({ route }: Props) {
+export default function GearDetailScreen({ route,navigation }: Props) {
   const { tokens } = useTheme();
   const { user } = useAuth();
   const unit = user?.preferred_distance_unit ?? 'km';
@@ -35,7 +37,8 @@ export default function GearDetailScreen({ route }: Props) {
   const [componentsExpanded, setComponentsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
   const [components, setComponents] = useState<Gear[]>([]);
- 
+  const {refetch}= useGearList()
+
 
   const fetchGear = useCallback(async () => {
     try {
@@ -76,19 +79,24 @@ export default function GearDetailScreen({ route }: Props) {
 const handleToggleDefault = useCallback(async () => {
   if (!gear) return;
 
-  const newValue = !gear.is_default;
+  const wasDefault = gear.is_default;
 
   try {
+    // optimistic update (миттєво UI)
+    setGear(prev => prev ? { ...prev, is_default: !wasDefault } : prev);
 
-    setGear(prev => prev ? { ...prev, is_default: newValue } : prev);
+    if (wasDefault) {
+      await gearApi.unsetDefault(gear.id);
+    } else {
+      await gearApi.setDefault(gear.id);
+    }
 
-    gearApi.setDefault(gear.id)
-   
+    await refetch(); 
   } catch (err) {
-
-    setGear(prev => prev ? { ...prev, is_default: !newValue } : prev);
+  
+    setGear(prev => prev ? { ...prev, is_default: wasDefault } : prev);
   }
-}, [gear, gearId, fetchGear]);
+}, [gear, refetch]);
 
   if (loading && !gear) {
     return (
