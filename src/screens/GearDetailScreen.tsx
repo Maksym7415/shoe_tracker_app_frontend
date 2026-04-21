@@ -82,7 +82,6 @@ const handleToggleDefault = useCallback(async () => {
   const wasDefault = gear.is_default;
 
   try {
-    // optimistic update (миттєво UI)
     setGear(prev => prev ? { ...prev, is_default: !wasDefault } : prev);
 
     if (wasDefault) {
