@@ -135,12 +135,12 @@ export default function AddActivityScreen({ navigation }: Props) {
   );
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
-    if (activityType === 'bike') return g.gear_type === 'bike';
+    if (activityType === 'bike') return  g.activity_type  === 'bike';
     return g.gear_type === 'shoe';
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow): string => {
+    (row: GearRow, index:number): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;

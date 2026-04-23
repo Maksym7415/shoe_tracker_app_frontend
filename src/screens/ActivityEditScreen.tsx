@@ -160,7 +160,9 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   }, []);
 
   const addGearRow = useCallback(() => {
+   
     setGearRows((prev) => {
+       
       const next = [...prev, { gearId: null, distanceKm: '', excludedComponentIds: [] }];
       if (prev.length === 1 && prev[0].gearId != null) {
         next[0] = { ...prev[0], distanceKm: totalDistance.toFixed(2) };
@@ -175,9 +177,11 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   }, []);
 
   const setRowGear = useCallback((rowIndex: number, gearId: number) => {
+      const gear = gearList.find((g) => g.id === gearId);
     setGearRows((prev) => {
       const next = [...prev];
       next[rowIndex] = { ...next[rowIndex], gearId, excludedComponentIds: [] };
+          setGearPickerRowIndex(next.length - 1);
       return next;
     });
     setGearPickerRowIndex(null);
@@ -201,10 +205,13 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
 
   const selectedGearIds = new Set(
     gearRows.map((r) => r.gearId).filter((id): id is number => id != null),
+    
   );
+
   const availableGear = gearList.filter((g) => {
+ 
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
-    if (activityType === 'bike') return g.gear_type === 'bike';
+    if (activityType === 'bike')  return g.activity_type === 'bike' ;
     return g.gear_type === 'shoe';
   });
 
@@ -505,6 +512,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
           <TouchableOpacity
             onPress={addGearRow}
             disabled={submitting || availableGear.length === 0}
+         
           >
             <Text style={[styles.addGearLink, { color: tokens.accent }]}>+ Add Gear</Text>
           </TouchableOpacity>
@@ -534,6 +542,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
                 const gearSubtitle = selectedGear.nick?.trim()
                   ? `${selectedGear.brand} ${selectedGear.model}`
                   : selectedGear.brand;
+              
                 return (
                   <View key={index} style={styles.gearCardWrapper}>
                     <ActivityGearCard
@@ -654,7 +663,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
           >
             <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-              data={gearList}
+            data={gearList}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =
