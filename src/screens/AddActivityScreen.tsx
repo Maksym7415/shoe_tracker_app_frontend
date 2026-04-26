@@ -135,8 +135,9 @@ export default function AddActivityScreen({ navigation }: Props) {
   );
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
-    if (activityType === 'bike') return  g.activity_type  === 'bike';
-    return g.gear_type === 'shoe';
+    if (activityType === 'other') return true;
+   return g.activity_type === activityType;
+
   });
 
   const getRowDistanceDisplay = useCallback(
