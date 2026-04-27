@@ -266,6 +266,7 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
     borderColor: tokens.cardBorder,
     borderRadius: tokens.cardBorderRadius,
     color: tokens.pageTitleColor,
+   
   };
 
   return (

@@ -664,7 +664,7 @@ const availableGear = gearList.filter((g) => {
           >
             <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-            data={gearList}
+            data={availableGear}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =

@@ -502,7 +502,7 @@ export default function AddActivityScreen({ navigation }: Props) {
           >
             <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-              data={gearList.filter((g) => g.status === 'active')}
+              data={availableGear}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =
