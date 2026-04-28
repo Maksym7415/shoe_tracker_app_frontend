@@ -46,7 +46,6 @@ function mapActivityTypeToApi(uiValue: string): string {
   return 'run';
 }
 
-const INPUT_HEIGHT = 40;
 
 export default function ShoeFormScreen({ route, navigation }: Props) {
   const { tokens } = useTheme();
@@ -261,12 +260,14 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
   }
 
   const inputStyle = {
-    height: INPUT_HEIGHT,
+   minHeight: 40,
+  paddingVertical: 10,
+  paddingHorizontal: 12,
     backgroundColor: tokens.cardBackground,
     borderColor: tokens.cardBorder,
     borderRadius: tokens.cardBorderRadius,
     color: tokens.pageTitleColor,
-   
+   textAlignVertical: 'center' as const,
   };
 
   return (
@@ -317,7 +318,17 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           onPress={() => !submitting && setDropdownVisible(true)}
           disabled={submitting}
         >
-          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>{activityLabel}</Text>
+      <Text
+  numberOfLines={1}
+  ellipsizeMode="clip"
+  style={{
+    color: tokens.pageTitleColor,
+    fontSize: 16,
+    flex: 1,
+  }}
+>
+  {activityLabel}
+</Text>
           <ChevronDownIcon size={20} color={tokens.textSecondary} />
         </TouchableOpacity>
 
@@ -589,6 +600,7 @@ const styles = StyleSheet.create({
   },
   dropdownTrigger: {
     marginBottom: 20,
+     justifyContent: 'center',
   },
   modalOverlay: {
     flex: 1,
