@@ -37,6 +37,7 @@ export interface GearUpdatePayload {
   max_value?: number | null;
   value_covered?: number | null;
   parent_gear_id?: number | null;
+  is_default?: boolean;
 }
 
 export interface ServiceCreatePayload {
@@ -88,6 +89,10 @@ export const gearApi = {
 
   setDefault: (id: number) =>
     client.put<GearSingleResponse>(`/api/gear/${id}/default`).then((res) => res.data),
+  unsetDefault: (id: number) =>
+  client
+    .delete<GearSingleResponse>(`/api/gear/${id}/default`)
+    .then((res) => res.data),
 
   retire: (id: number) =>
     client.put<GearSingleResponse>(`/api/gear/${id}/retire`).then((res) => res.data),

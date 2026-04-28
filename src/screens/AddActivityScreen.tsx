@@ -135,12 +135,13 @@ export default function AddActivityScreen({ navigation }: Props) {
   );
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
-    if (activityType === 'bike') return g.gear_type === 'bike';
-    return g.gear_type === 'shoe';
+    if (activityType === 'other') return true;
+   return g.activity_type === activityType;
+
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow): string => {
+    (row: GearRow, index:number): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
@@ -501,7 +502,7 @@ export default function AddActivityScreen({ navigation }: Props) {
           >
             <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-              data={gearList.filter((g) => g.status === 'active')}
+              data={availableGear}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =

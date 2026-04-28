@@ -5,6 +5,7 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
+
 export type MainStackParamList = {
   'Shoes/List': undefined;
   'Shoes/Add': undefined;
