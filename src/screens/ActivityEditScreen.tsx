@@ -332,11 +332,14 @@ const availableGear = gearList.filter((g) => {
   }, [navigation, tokens.textSecondary, handleDelete]);
 
   const inputStyle = {
-    height: INPUT_HEIGHT,
+    minHeight: INPUT_HEIGHT,
     backgroundColor: tokens.cardBackground,
     borderColor: tokens.cardBorder,
     borderRadius: tokens.cardBorderRadius,
     color: tokens.pageTitleColor,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'center' as const,
   };
 
   if (loading) {
@@ -400,7 +403,15 @@ const availableGear = gearList.filter((g) => {
           onPress={() => setShowDatePicker(true)}
           disabled={submitting}
         >
-          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>
+               <Text
+          numberOfLines={1}
+          ellipsizeMode="clip"
+          style={{
+            color: tokens.pageTitleColor,
+            fontSize: 16,
+            flex: 1,
+          }}
+        >
             {formatDateDisplay(date)}
           </Text>
           <CalendarIcon size={20} color={tokens.textSecondary} />
@@ -435,7 +446,15 @@ const availableGear = gearList.filter((g) => {
           onPress={() => !submitting && setActivityTypeDropdownVisible(true)}
           disabled={submitting}
         >
-          <Text style={{ color: tokens.pageTitleColor, fontSize: 16 }}>
+       <Text
+  numberOfLines={1}
+  ellipsizeMode="clip"
+  style={{
+    color: tokens.pageTitleColor,
+    fontSize: 16,
+    flex: 1,
+  }}
+>
             {ACTIVITY_TYPE_OPTIONS.find((o) => o.value === activityType)?.label ?? 'Running'}
           </Text>
           <ChevronDownIcon size={20} color={tokens.textSecondary} />

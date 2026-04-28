@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '../navigation/types';
+import { Eye, EyeOff } from 'lucide-react-native';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
@@ -23,6 +24,7 @@ export default function LoginScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -80,23 +82,40 @@ export default function LoginScreen({ navigation }: Props) {
           autoComplete="email"
           editable={!loading}
         />
-        <TextInput
-          style={[
-            styles.input,
-            {
-              borderColor: tokens.cardBorder,
-              backgroundColor: tokens.cardBackground,
-              color: tokens.pageTitleColor,
-            },
-          ]}
-          placeholder="Password"
-          placeholderTextColor={tokens.profileSecondaryText}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="password"
-          editable={!loading}
-        />
+    <View
+  style={[
+    styles.passwordContainer,
+    {
+      borderColor: tokens.cardBorder,
+      backgroundColor: tokens.cardBackground,
+    },
+  ]}
+>
+  <TextInput
+    style={[
+      styles.passwordInput,
+      { color: tokens.pageTitleColor },
+    ]}
+    placeholder="Password"
+    placeholderTextColor={tokens.profileSecondaryText}
+    value={password}
+    onChangeText={setPassword}
+    secureTextEntry={!showPassword}
+    autoComplete="password"
+    editable={!loading}
+  />
+
+  <TouchableOpacity
+    onPress={() => setShowPassword(prev => !prev)}
+    style={styles.eyeButton}
+  >
+    {showPassword ? (
+      <Eye size={20} color={tokens.textSecondary} />
+    ) : (
+      <EyeOff size={20} color={tokens.textSecondary} />
+    )}
+  </TouchableOpacity>
+</View>
 
         <TouchableOpacity
           style={[
@@ -129,6 +148,24 @@ export default function LoginScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
+  passwordInput: {
+  flex: 1,
+  padding: 14,
+  fontSize: 16,
+},
+  passwordContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  borderWidth: 1,
+  borderRadius: 8,
+  paddingHorizontal: 12,
+  marginBottom: 16,
+},
+eyeButton: {
+  paddingHorizontal: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
   container: {
     flex: 1,
     justifyContent: 'center',
