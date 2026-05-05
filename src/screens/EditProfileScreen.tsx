@@ -195,6 +195,7 @@ export default function EditProfileScreen({ navigation }: Props) {
               <TextInput
                 style={[
                   styles.input,
+                  { marginTop: 8 },
                   {
                     borderColor: tokens.cardBorder,
                     backgroundColor: tokens.cardBackground,
@@ -322,14 +323,6 @@ const styles = StyleSheet.create({
   },
   helperText: {
     fontSize: 13,
-  },
-  input: {
-    height: INPUT_HEIGHT,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginTop: 8,
   },
   primaryButton: {
     borderRadius: 8,

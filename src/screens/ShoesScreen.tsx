@@ -36,15 +36,13 @@ const FILTERS: { value: ActivityFilterType; label: string }[] = [
 export default function ShoesScreen({ navigation }: Props) {
   const { tokens } = useTheme();
   const [filter, setFilter] = useState<FilterValue>('all');
-  const { gear, componentsCountMap, loading, refreshing, error, load, refresh, refetch } =
-    useGearList();
-
+  const { gear, componentsCountMap, loading, refreshing, error, refresh, refetch } = useGearList();
 
   useFocusEffect(
-  useCallback(() => {
-    refetch(); 
-  }, [refetch]),
-);
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const filteredGear = useMemo(() => {
     if (filter === 'all') return gear;
@@ -55,7 +53,7 @@ export default function ShoesScreen({ navigation }: Props) {
     async (item: Gear) => {
       try {
         await gearApi.setDefault(item.id);
-  
+
         refetch();
       } catch (err: unknown) {
         const msg =
@@ -67,7 +65,6 @@ export default function ShoesScreen({ navigation }: Props) {
     },
     [refetch],
   );
-
 
   const handleRetire = useCallback(
     async (item: Gear) => {
@@ -126,7 +123,6 @@ export default function ShoesScreen({ navigation }: Props) {
               : undefined
           }
           onSetDefault={() => handleSetDefault(item)}
-
           onDelete={() => handleDelete(item)}
           onRetire={() => handleRetire(item)}
         />

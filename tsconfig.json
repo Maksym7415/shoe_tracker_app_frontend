@@ -3,7 +3,5 @@
   "compilerOptions": {
     "types": ["node", "react-native"],
     "strict": true
-  },
-   
-
+  }
 }

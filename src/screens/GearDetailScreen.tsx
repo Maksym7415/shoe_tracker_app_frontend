@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -20,10 +20,9 @@ import type { Gear, Service } from '../types';
 import { StarIcon, ChevronRightIcon, ChevronDownIcon } from '../components/icons';
 import { useGearList } from '../hooks/useGearList';
 
-
 type Props = NativeStackScreenProps<MainStackParamList, 'Shoes/Detail'>;
 
-export default function GearDetailScreen({ route}: Props) {
+export default function GearDetailScreen({ route }: Props) {
   const { tokens } = useTheme();
   const { user } = useAuth();
   const unit = user?.preferred_distance_unit ?? 'km';
@@ -37,8 +36,7 @@ export default function GearDetailScreen({ route}: Props) {
   const [componentsExpanded, setComponentsExpanded] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
   const [components, setComponents] = useState<Gear[]>([]);
-  const {refetch}= useGearList()
-
+  const { refetch } = useGearList();
 
   const fetchGear = useCallback(async () => {
     try {
@@ -76,26 +74,25 @@ export default function GearDetailScreen({ route}: Props) {
     fetchGear();
   }, [fetchGear]);
 
-const handleToggleDefault = useCallback(async () => {
-  if (!gear) return;
+  const handleToggleDefault = useCallback(async () => {
+    if (!gear) return;
 
-  const wasDefault = gear.is_default;
+    const wasDefault = gear.is_default;
 
-  try {
-    setGear(prev => prev ? { ...prev, is_default: !wasDefault } : prev);
+    try {
+      setGear((prev) => (prev ? { ...prev, is_default: !wasDefault } : prev));
 
-    if (wasDefault) {
-      await gearApi.unsetDefault(gear.id);
-    } else {
-      await gearApi.setDefault(gear.id);
+      if (wasDefault) {
+        await gearApi.unsetDefault(gear.id);
+      } else {
+        await gearApi.setDefault(gear.id);
+      }
+
+      await refetch();
+    } catch {
+      setGear((prev) => (prev ? { ...prev, is_default: wasDefault } : prev));
     }
-
-    await refetch(); 
-  } catch (err) {
-  
-    setGear(prev => prev ? { ...prev, is_default: wasDefault } : prev);
-  }
-}, [gear, refetch]);
+  }, [gear, refetch]);
 
   if (loading && !gear) {
     return (
@@ -119,7 +116,7 @@ const handleToggleDefault = useCallback(async () => {
       </View>
     );
   }
-    if (!gear) return null;
+  if (!gear) return null;
 
   const gearName = gear.nick?.trim() ? gear.nick : `${gear.brand} ${gear.model}`;
   const subtitle = gear.nick?.trim() ? `${gear.brand} ${gear.model}` : null;
@@ -133,7 +130,6 @@ const handleToggleDefault = useCallback(async () => {
   const badge = getActivityBadge(tokens, gear.activity_type);
   const addedDate = new Date(gear.created_at);
   const addedLabel = `Added ${addedDate.toLocaleDateString()}`;
-
 
   return (
     <ScrollView
@@ -241,39 +237,35 @@ const handleToggleDefault = useCallback(async () => {
             </View>
           )}
         </View>
-<TouchableOpacity
- onPress={handleToggleDefault}
-  style={[
-    styles.defaultButton,
-    {
-      backgroundColor: gear.is_default ? 'transparent' : tokens.accent,
-      borderColor: tokens.accent,
-      borderWidth: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-  ]}
+        <TouchableOpacity
+          onPress={handleToggleDefault}
+          style={[
+            styles.defaultButton,
+            {
+              backgroundColor: gear.is_default ? 'transparent' : tokens.accent,
+              borderColor: tokens.accent,
+              borderWidth: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+            },
+          ]}
+        >
+          <View style={{ marginRight: 6 }}>
+            <StarIcon size={16} color={gear.is_default ? tokens.accent : '#fff'} />
+          </View>
 
->
-  <View style={{ marginRight: 6 }}>
-    <StarIcon
-      size={16}
-      color={gear.is_default ? tokens.accent : '#fff'}
-    />
-  </View>
-
-  <Text
-    style={[
-      styles.defaultButtonText,
-      {
-        color: gear.is_default  ? tokens.accent : '#fff',
-      },
-    ]}
-  >
-    {gear.is_default  ? 'Remove default' : 'Set as default'}
-  </Text>
-</TouchableOpacity>
+          <Text
+            style={[
+              styles.defaultButtonText,
+              {
+                color: gear.is_default ? tokens.accent : '#fff',
+              },
+            ]}
+          >
+            {gear.is_default ? 'Remove default' : 'Set as default'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {components.length > 0 && (
@@ -395,16 +387,16 @@ const handleToggleDefault = useCallback(async () => {
 
 const styles = StyleSheet.create({
   defaultButton: {
-  marginTop: 16,
-  paddingVertical: 12,
-  borderRadius: 8,
-  alignItems: 'center',
-},
+    marginTop: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
 
-defaultButtonText: {
-  fontSize: 14,
-  fontWeight: '600',
-},
+  defaultButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
   container: {
     flex: 1,
   },

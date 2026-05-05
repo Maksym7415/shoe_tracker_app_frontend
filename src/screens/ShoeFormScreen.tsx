@@ -46,7 +46,6 @@ function mapActivityTypeToApi(uiValue: string): string {
   return 'run';
 }
 
-
 export default function ShoeFormScreen({ route, navigation }: Props) {
   const { tokens } = useTheme();
   const isEdit = route.name === 'Shoes/Edit';
@@ -260,14 +259,14 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
   }
 
   const inputStyle = {
-   minHeight: 40,
-  paddingVertical: 10,
-  paddingHorizontal: 12,
+    minHeight: 40,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: tokens.cardBackground,
     borderColor: tokens.cardBorder,
     borderRadius: tokens.cardBorderRadius,
     color: tokens.pageTitleColor,
-   textAlignVertical: 'center' as const,
+    textAlignVertical: 'center' as const,
   };
 
   return (
@@ -318,17 +317,17 @@ export default function ShoeFormScreen({ route, navigation }: Props) {
           onPress={() => !submitting && setDropdownVisible(true)}
           disabled={submitting}
         >
-      <Text
-  numberOfLines={1}
-  ellipsizeMode="clip"
-  style={{
-    color: tokens.pageTitleColor,
-    fontSize: 16,
-    flex: 1,
-  }}
->
-  {activityLabel}
-</Text>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{
+              color: tokens.pageTitleColor,
+              fontSize: 16,
+              flex: 1,
+            }}
+          >
+            {activityLabel}
+          </Text>
           <ChevronDownIcon size={20} color={tokens.textSecondary} />
         </TouchableOpacity>
 
@@ -600,7 +599,7 @@ const styles = StyleSheet.create({
   },
   dropdownTrigger: {
     marginBottom: 20,
-     justifyContent: 'center',
+    justifyContent: 'center',
   },
   modalOverlay: {
     flex: 1,

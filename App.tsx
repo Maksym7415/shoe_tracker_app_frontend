@@ -6,10 +6,7 @@ import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { StravaDeepLinkHandler } from './src/components/StravaDeepLinkHandler';
 import RootNavigator from './src/navigation/RootNavigator';
-import {
-  SpaceGrotesk_600SemiBold,
-  SpaceGrotesk_700Bold,
-} from '@expo-google-fonts/space-grotesk';
+import { SpaceGrotesk_600SemiBold, SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk';
 
 function ThemedStatusBar() {
   const { isDark } = useTheme();

@@ -136,12 +136,11 @@ export default function AddActivityScreen({ navigation }: Props) {
   const availableGear = gearList.filter((g) => {
     if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
     if (activityType === 'other') return true;
-   return g.activity_type === activityType;
-
+    return g.activity_type === activityType;
   });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow, index:number): string => {
+    (row: GearRow): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
@@ -267,15 +266,15 @@ export default function AddActivityScreen({ navigation }: Props) {
           onPress={() => setShowDatePicker(true)}
           disabled={submitting}
         >
-       <Text
-  numberOfLines={1}
-  ellipsizeMode="clip"
-  style={{
-    color: tokens.pageTitleColor,
-    fontSize: 16,
-    flex: 1,
-  }}
->
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{
+              color: tokens.pageTitleColor,
+              fontSize: 16,
+              flex: 1,
+            }}
+          >
             {formatDateDisplay(date)}
           </Text>
           <CalendarIcon size={20} color={tokens.textSecondary} />
@@ -310,15 +309,15 @@ export default function AddActivityScreen({ navigation }: Props) {
           onPress={() => !submitting && setActivityTypeDropdownVisible(true)}
           disabled={submitting}
         >
-         <Text
-  numberOfLines={1}
-  ellipsizeMode="clip"
-  style={{
-    color: tokens.pageTitleColor,
-    fontSize: 16,
-    flex: 1,
-  }}
->
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{
+              color: tokens.pageTitleColor,
+              fontSize: 16,
+              flex: 1,
+            }}
+          >
             {ACTIVITY_TYPE_OPTIONS.find((o) => o.value === activityType)?.label ?? 'Running'}
           </Text>
           <ChevronDownIcon size={20} color={tokens.textSecondary} />
@@ -409,7 +408,7 @@ export default function AddActivityScreen({ navigation }: Props) {
             {gearRows.map((row, index) => {
               const selectedGear =
                 row.gearId != null ? gearList.find((g) => g.id === row.gearId) : null;
-              const distanceDisplay = getRowDistanceDisplay(row, index);
+              const distanceDisplay = getRowDistanceDisplay(row);
               const distanceEditable = getRowDistanceEditable(index);
               const isPickerActive = gearPickerRowIndex === index;
               const hasSelection = selectedGear != null;

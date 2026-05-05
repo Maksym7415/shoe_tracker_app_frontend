@@ -90,9 +90,7 @@ export const gearApi = {
   setDefault: (id: number) =>
     client.put<GearSingleResponse>(`/api/gear/${id}/default`).then((res) => res.data),
   unsetDefault: (id: number) =>
-  client
-    .delete<GearSingleResponse>(`/api/gear/${id}/default`)
-    .then((res) => res.data),
+    client.delete<GearSingleResponse>(`/api/gear/${id}/default`).then((res) => res.data),
 
   retire: (id: number) =>
     client.put<GearSingleResponse>(`/api/gear/${id}/retire`).then((res) => res.data),

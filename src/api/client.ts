@@ -39,12 +39,10 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 client.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-
     const token = await getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else if (config.url && AUTH_ENDPOINTS_REQUIRING_TOKEN.some((p) => config.url?.includes(p))) {
-     
     }
     return config;
   },

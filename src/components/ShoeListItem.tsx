@@ -38,7 +38,6 @@ export default function ShoeListItem({
   const mileage = formatDistance(gear.value_covered ?? 0, unit);
 
   const isRetired = gear.status === 'retired';
-  
 
   return (
     <View
@@ -62,7 +61,6 @@ export default function ShoeListItem({
           }> = [];
           if (!gear.is_default && !isRetired) {
             options.push({ text: 'Set as default', onPress: onSetDefault });
-
           }
           if (!isRetired && onRetire) {
             options.push({ text: 'Retire', onPress: onRetire });
@@ -191,7 +189,7 @@ const styles = StyleSheet.create({
   defaultBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-     marginLeft: 8,
+    marginLeft: 8,
     paddingHorizontal: 6,
     paddingVertical: 4,
     borderRadius: 8,

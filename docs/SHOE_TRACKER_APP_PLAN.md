@@ -65,34 +65,34 @@ shoe-tracker-backend/
 
 ### 1.2 Data Model
 
-| Table | Key Fields |
-| ----- | ---------- |
-| **users** | id, email, password_hash, name, avatar_url, created_at |
-| **users_strava** | user_id, strava_athlete_id, access_token, refresh_token, token_expires_at |
-| **shoes** | id, user_id, activity_type, brand, model, nick, max_distance_km, is_default, created_at |
-| **activities** | id, user_id, name, date, total_distance_km, source (manual \| strava), strava_activity_id |
-| **activity_shoes** | id, activity_id, shoe_id, distance_km |
+| Table              | Key Fields                                                                                |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| **users**          | id, email, password_hash, name, avatar_url, created_at                                    |
+| **users_strava**   | user_id, strava_athlete_id, access_token, refresh_token, token_expires_at                 |
+| **shoes**          | id, user_id, activity_type, brand, model, nick, max_distance_km, is_default, created_at   |
+| **activities**     | id, user_id, name, date, total_distance_km, source (manual \| strava), strava_activity_id |
+| **activity_shoes** | id, activity_id, shoe_id, distance_km                                                     |
 
 ### 1.3 API Endpoints
 
-| Method | Endpoint | Auth | Purpose |
-| ------ | -------- | ---- | ------- |
-| POST | /api/auth/register | No | Register user |
-| POST | /api/auth/login | No | Login, return JWT |
-| POST | /api/auth/forgot-password | No | Request reset |
-| POST | /api/auth/reset-password | No | Reset with token |
-| GET | /api/auth/me | Yes | Current user |
-| PUT | /api/auth/profile | Yes | Update name, avatar |
-| CRUD | /api/shoes | Yes | List, create, update, delete shoes |
-| PUT | /api/shoes/:id/default | Yes | Mark shoe as default |
-| CRUD | /api/activities | Yes | List, create, update, delete activities |
-| GET | /api/activities/:id | Yes | Activity detail with shoes |
-| PUT | /api/activities/:id/shoes | Yes | Add/edit/remove shoes and distances |
-| GET | /api/strava/connect | Yes | Return Strava OAuth URL |
-| GET | /api/strava/callback | No | OAuth callback, exchange code, store tokens |
-| POST | /api/strava/disconnect | Yes | Remove Strava link |
-| GET | /api/strava/status | Yes | Connected or not |
-| POST | /api/webhooks/strava | No | Strava webhook receiver (validate, respond 200, async process) |
+| Method | Endpoint                  | Auth | Purpose                                                        |
+| ------ | ------------------------- | ---- | -------------------------------------------------------------- |
+| POST   | /api/auth/register        | No   | Register user                                                  |
+| POST   | /api/auth/login           | No   | Login, return JWT                                              |
+| POST   | /api/auth/forgot-password | No   | Request reset                                                  |
+| POST   | /api/auth/reset-password  | No   | Reset with token                                               |
+| GET    | /api/auth/me              | Yes  | Current user                                                   |
+| PUT    | /api/auth/profile         | Yes  | Update name, avatar                                            |
+| CRUD   | /api/shoes                | Yes  | List, create, update, delete shoes                             |
+| PUT    | /api/shoes/:id/default    | Yes  | Mark shoe as default                                           |
+| CRUD   | /api/activities           | Yes  | List, create, update, delete activities                        |
+| GET    | /api/activities/:id       | Yes  | Activity detail with shoes                                     |
+| PUT    | /api/activities/:id/shoes | Yes  | Add/edit/remove shoes and distances                            |
+| GET    | /api/strava/connect       | Yes  | Return Strava OAuth URL                                        |
+| GET    | /api/strava/callback      | No   | OAuth callback, exchange code, store tokens                    |
+| POST   | /api/strava/disconnect    | Yes  | Remove Strava link                                             |
+| GET    | /api/strava/status        | Yes  | Connected or not                                               |
+| POST   | /api/webhooks/strava      | No   | Strava webhook receiver (validate, respond 200, async process) |
 
 ### 1.4 Strava Integration Flow
 
@@ -127,31 +127,34 @@ shoe-tracker-backend/
 
 ### 2.2 Screens and Navigation
 
-| Screen | Route | Purpose |
-| ------ | ----- | ------- |
-| Login | /login | Email/password login |
-| Register | /register | Email/password signup |
-| Profile | /profile | Avatar, name, email, reset password, Strava connect status |
-| Shoes | /shoes | List shoes, add shoe (activity type, brand, model, nick, max distance) |
-| Add Shoe | /shoes/add | Form for new shoe |
-| Activities | /activities | List activities, FAB "Add activity" |
-| Add Activity | /activities/add | Name, date, add shoes, total distance, per-shoe distance |
-| Activity Detail | /activities/:id | View shoes in activity; tap to edit |
-| Edit Activity | /activities/:id/edit | Add/remove shoes, edit distances |
+| Screen          | Route                | Purpose                                                                |
+| --------------- | -------------------- | ---------------------------------------------------------------------- |
+| Login           | /login               | Email/password login                                                   |
+| Register        | /register            | Email/password signup                                                  |
+| Profile         | /profile             | Avatar, name, email, reset password, Strava connect status             |
+| Shoes           | /shoes               | List shoes, add shoe (activity type, brand, model, nick, max distance) |
+| Add Shoe        | /shoes/add           | Form for new shoe                                                      |
+| Activities      | /activities          | List activities, FAB "Add activity"                                    |
+| Add Activity    | /activities/add      | Name, date, add shoes, total distance, per-shoe distance               |
+| Activity Detail | /activities/:id      | View shoes in activity; tap to edit                                    |
+| Edit Activity   | /activities/:id/edit | Add/remove shoes, edit distances                                       |
 
 ### 2.3 Key UX Flows
 
 **Add activity (manual):**
+
 - Name, date picker, total distance.
 - Add shoes: pick from user's shoes, set distance per pair. Sum of shoe distances can differ from total (user responsibility or soft validation).
 - Default shoe pre-selected with full distance; user can add more shoes and split.
 
 **Add activity (from Strava):**
+
 - Webhook creates activity with default shoe.
 - Push notification: "New run from Strava: X km. Tap to edit shoes."
 - Tap opens `/activities/:id/edit` (via deep link).
 
 **Profile:**
+
 - Avatar (camera/gallery), name, email (read-only), "Reset password", "Connect Strava" / "Disconnect Strava".
 
 ---
@@ -208,6 +211,7 @@ shoe-tracker-backend/
 ## 5. Environment / Config
 
 **Backend:**
+
 - `DATABASE_URL` (SQLite path or Postgres URL)
 - `JWT_SECRET`
 - `STRAVA_CLIENT_ID`
@@ -220,6 +224,7 @@ shoe-tracker-backend/
 - `STRAVA_FRONTEND_REDIRECT_URL` (where GET callbacks should land after exchanging tokens, e.g. `https://localhost:5173/strava/oauth`)
 
 **React Native:**
+
 - `EXPO_PUBLIC_API_URL` (backend base URL)
 
 ---
