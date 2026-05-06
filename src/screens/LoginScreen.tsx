@@ -82,40 +82,37 @@ export default function LoginScreen({ navigation }: Props) {
           autoComplete="email"
           editable={!loading}
         />
-    <View
-  style={[
-    styles.passwordContainer,
-    {
-      borderColor: tokens.cardBorder,
-      backgroundColor: tokens.cardBackground,
-    },
-  ]}
->
-  <TextInput
-    style={[
-      styles.passwordInput,
-      { color: tokens.pageTitleColor },
-    ]}
-    placeholder="Password"
-    placeholderTextColor={tokens.profileSecondaryText}
-    value={password}
-    onChangeText={setPassword}
-    secureTextEntry={!showPassword}
-    autoComplete="password"
-    editable={!loading}
-  />
+        <View
+          style={[
+            styles.passwordContainer,
+            {
+              borderColor: tokens.cardBorder,
+              backgroundColor: tokens.cardBackground,
+            },
+          ]}
+        >
+          <TextInput
+            style={[styles.passwordInput, { color: tokens.pageTitleColor }]}
+            placeholder="Password"
+            placeholderTextColor={tokens.profileSecondaryText}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoComplete="password"
+            editable={!loading}
+          />
 
-  <TouchableOpacity
-    onPress={() => setShowPassword(prev => !prev)}
-    style={styles.eyeButton}
-  >
-    {showPassword ? (
-      <Eye size={20} color={tokens.textSecondary} />
-    ) : (
-      <EyeOff size={20} color={tokens.textSecondary} />
-    )}
-  </TouchableOpacity>
-</View>
+          <TouchableOpacity
+            onPress={() => setShowPassword((prev) => !prev)}
+            style={styles.eyeButton}
+          >
+            {showPassword ? (
+              <Eye size={20} color={tokens.textSecondary} />
+            ) : (
+              <EyeOff size={20} color={tokens.textSecondary} />
+            )}
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={[
@@ -149,23 +146,23 @@ export default function LoginScreen({ navigation }: Props) {
 
 const styles = StyleSheet.create({
   passwordInput: {
-  flex: 1,
-  padding: 14,
-  fontSize: 16,
-},
+    flex: 1,
+    padding: 14,
+    fontSize: 16,
+  },
   passwordContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  borderWidth: 1,
-  borderRadius: 8,
-  paddingHorizontal: 12,
-  marginBottom: 16,
-},
-eyeButton: {
-  paddingHorizontal: 10,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  eyeButton: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',

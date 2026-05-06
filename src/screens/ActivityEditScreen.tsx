@@ -160,9 +160,7 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   }, []);
 
   const addGearRow = useCallback(() => {
-   
     setGearRows((prev) => {
-       
       const next = [...prev, { gearId: null, distanceKm: '', excludedComponentIds: [] }];
       if (prev.length === 1 && prev[0].gearId != null) {
         next[0] = { ...prev[0], distanceKm: totalDistance.toFixed(2) };
@@ -177,11 +175,10 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
   }, []);
 
   const setRowGear = useCallback((rowIndex: number, gearId: number) => {
-      const gear = gearList.find((g) => g.id === gearId);
     setGearRows((prev) => {
       const next = [...prev];
       next[rowIndex] = { ...next[rowIndex], gearId, excludedComponentIds: [] };
-          setGearPickerRowIndex(next.length - 1);
+      setGearPickerRowIndex(next.length - 1);
       return next;
     });
     setGearPickerRowIndex(null);
@@ -205,19 +202,18 @@ export default function ActivityEditScreen({ route, navigation }: Props) {
 
   const selectedGearIds = new Set(
     gearRows.map((r) => r.gearId).filter((id): id is number => id != null),
-    
   );
 
-const availableGear = gearList.filter((g) => {
-  if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
+  const availableGear = gearList.filter((g) => {
+    if (g.status !== 'active' || selectedGearIds.has(g.id)) return false;
 
-  if (activityType === 'other') return true;
+    if (activityType === 'other') return true;
 
-  return g.activity_type === activityType;
-});
+    return g.activity_type === activityType;
+  });
 
   const getRowDistanceDisplay = useCallback(
-    (row: GearRow,index:number): string => {
+    (row: GearRow): string => {
       if (row.gearId == null) return row.distanceKm;
       if (gearRows.length === 1) return totalDistance.toFixed(2);
       return row.distanceKm;
@@ -280,7 +276,7 @@ const availableGear = gearList.filter((g) => {
       } else {
         await activitiesApi.assignGear(activityId, []);
       }
-      navigation.navigate(MainRoutes.ActivitiesDetail, { id: activityId });
+      navigation.goBack();
     } catch (err: unknown) {
       const msg =
         err && typeof err === 'object' && 'response' in err
@@ -403,15 +399,15 @@ const availableGear = gearList.filter((g) => {
           onPress={() => setShowDatePicker(true)}
           disabled={submitting}
         >
-               <Text
-          numberOfLines={1}
-          ellipsizeMode="clip"
-          style={{
-            color: tokens.pageTitleColor,
-            fontSize: 16,
-            flex: 1,
-          }}
-        >
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{
+              color: tokens.pageTitleColor,
+              fontSize: 16,
+              flex: 1,
+            }}
+          >
             {formatDateDisplay(date)}
           </Text>
           <CalendarIcon size={20} color={tokens.textSecondary} />
@@ -446,15 +442,15 @@ const availableGear = gearList.filter((g) => {
           onPress={() => !submitting && setActivityTypeDropdownVisible(true)}
           disabled={submitting}
         >
-       <Text
-  numberOfLines={1}
-  ellipsizeMode="clip"
-  style={{
-    color: tokens.pageTitleColor,
-    fontSize: 16,
-    flex: 1,
-  }}
->
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="clip"
+            style={{
+              color: tokens.pageTitleColor,
+              fontSize: 16,
+              flex: 1,
+            }}
+          >
             {ACTIVITY_TYPE_OPTIONS.find((o) => o.value === activityType)?.label ?? 'Running'}
           </Text>
           <ChevronDownIcon size={20} color={tokens.textSecondary} />
@@ -532,7 +528,6 @@ const availableGear = gearList.filter((g) => {
           <TouchableOpacity
             onPress={addGearRow}
             disabled={submitting || availableGear.length === 0}
-         
           >
             <Text style={[styles.addGearLink, { color: tokens.accent }]}>+ Add Gear</Text>
           </TouchableOpacity>
@@ -546,7 +541,7 @@ const availableGear = gearList.filter((g) => {
             {gearRows.map((row, index) => {
               const selectedGear =
                 row.gearId != null ? gearList.find((g) => g.id === row.gearId) : null;
-              const distanceDisplay = getRowDistanceDisplay(row, index);
+              const distanceDisplay = getRowDistanceDisplay(row);
               const distanceEditable = getRowDistanceEditable(index);
               const isPickerActive = gearPickerRowIndex === index;
               const componentsCount = selectedGear?.components_count ?? 0;
@@ -562,7 +557,7 @@ const availableGear = gearList.filter((g) => {
                 const gearSubtitle = selectedGear.nick?.trim()
                   ? `${selectedGear.brand} ${selectedGear.model}`
                   : selectedGear.brand;
-              
+
                 return (
                   <View key={index} style={styles.gearCardWrapper}>
                     <ActivityGearCard
@@ -683,7 +678,7 @@ const availableGear = gearList.filter((g) => {
           >
             <Text style={[styles.modalTitle, { color: tokens.pageTitleColor }]}>Select gear</Text>
             <FlatList
-            data={availableGear}
+              data={availableGear}
               keyExtractor={(item) => String(item.id)}
               renderItem={({ item }) => {
                 const isSelected =

@@ -17,104 +17,119 @@ Shoes_Activity_Icon - <svg xmlns="http://www.w3.org/2000/svg" width="24" height=
 
 FONTS AND COLORS (dark theme):
 Page title:
-   - color: #e7ebef
-   - font-family: Space Grotesk,sans-serif
-   - font-size: 18
-   - font-weight: 700
+
+- color: #e7ebef
+- font-family: Space Grotesk,sans-serif
+- font-size: 18
+- font-weight: 700
 
 Plus button:
-   - background-color: #f97924
-   - width: 56px
-   - height: 56px
+
+- background-color: #f97924
+- width: 56px
+- height: 56px
 
 Bottom navigation:
-   - background-color: #1d222af2
-   - backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+
+- background-color: #1d222af2
+- backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 
 My Gear header filters (active):
-   - background-color: #f97924
-   - font-wieght: 500
-   - color: #ffffff
-   - font-size: 12
-   - font-family: Inter,sans-serif
+
+- background-color: #f97924
+- font-wieght: 500
+- color: #ffffff
+- font-size: 12
+- font-family: Inter,sans-serif
 
 My Gear header filters (non active):
-   - background-color:#2b303b
-   - font-wieght: 500
-   - color: #d1d9e0
-   - font-size: 12
-   - font-family: Inter,sans-serif
+
+- background-color:#2b303b
+- font-wieght: 500
+- color: #d1d9e0
+- font-size: 12
+- font-family: Inter,sans-serif
 
 My Gear item:
-   - background-color: #1d222a
-   - border: 1px solid #303540
-   - border-radius: 12px
-My Gear item header:
-   - font-wieght: 600
-   - font-size: 14
-   - font-family: Space Grotesk,sans-serif
-   - color: #e7ebef
-My Gear item brand and model:
-   - font-wieght: 500
-   - font-size: 14
-   - font-family: Inter,sans-serif
-   - color: #7e8a9a
-My Gear item default badge:
-   - color: #f97924
-   - font-size: 10
-   - font-family: Inter,sans-serif
+
+- background-color: #1d222a
+- border: 1px solid #303540
+- border-radius: 12px
+  My Gear item header:
+- font-wieght: 600
+- font-size: 14
+- font-family: Space Grotesk,sans-serif
+- color: #e7ebef
+  My Gear item brand and model:
+- font-wieght: 500
+- font-size: 14
+- font-family: Inter,sans-serif
+- color: #7e8a9a
+  My Gear item default badge:
+- color: #f97924
+- font-size: 10
+- font-family: Inter,sans-serif
 
 My Gear run badge:
-   - color: #f97924
-   - font-weight: 500
-   - font-size: 12px
-   - background-color: #f9792426
-   - border-radius: 10px
+
+- color: #f97924
+- font-weight: 500
+- font-size: 12px
+- background-color: #f9792426
+- border-radius: 10px
 
 My Gear ride badge:
-   - color: #0da2e7
-   - font-weight: 500
-   - font-size: 12px
-   - background-color: #0da2e726
-   - border-radius: 10px
+
+- color: #0da2e7
+- font-weight: 500
+- font-size: 12px
+- background-color: #0da2e726
+- border-radius: 10px
 
 My Gear swim badge:
-   - color: #2bd4bd
-   - font-weight: 500
-   - font-size: 12px
-   - background-color: #2bd4bd26
-   - border-radius: 10px
+
+- color: #2bd4bd
+- font-weight: 500
+- font-size: 12px
+- background-color: #2bd4bd26
+- border-radius: 10px
 
 My activities list item:
-   - background-color: #1d222a
-   - border: 1px solid #303540
-   - border-radius: 12px
+
+- background-color: #1d222a
+- border: 1px solid #303540
+- border-radius: 12px
 
 My activities list item header:
-   - font-wieght: 600
-   - font-size: 16
-   - font-family: Space Grotesk,sans-serif
-   - color: #e7ebef
+
+- font-wieght: 600
+- font-size: 16
+- font-family: Space Grotesk,sans-serif
+- color: #e7ebef
 
 My activities list item date:
-   - font-size: 12px
-   - color: #7e8a9a
+
+- font-size: 12px
+- color: #7e8a9a
 
 My activities list strava badge:
-   - color: #f97924
+
+- color: #f97924
 
 My activities list manual badge:
-   - color: #0da2e7
+
+- color: #0da2e7
 
 My activities list item total distance:
-   - color: #e7ebef
-   - font-size: 14px
-   - font-weight: 500
-   - font-family: Inter,sans-serif
+
+- color: #e7ebef
+- font-size: 14px
+- font-weight: 500
+- font-family: Inter,sans-serif
 
 My activities list item shoes and time:
-   - color: #7e8a9a
-   - font-size: 12px
-   - font-weight: 500
-   - font-family: Inter,sans-serif
 
+- color: #7e8a9a
+- font-size: 12px
+- font-weight: 500
+- font-family: Inter,sans-serif

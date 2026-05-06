@@ -32,11 +32,7 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-web-browser",
-      "@react-native-community/datetimepicker",
-      "expo-font"
-    ],
+    "plugins": ["expo-web-browser", "@react-native-community/datetimepicker", "expo-font"],
     "extra": {
       "eas": {
         "projectId": "453c9186-e422-4885-bf31-968d218c09cb"
